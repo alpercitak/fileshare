@@ -1,0 +1,12 @@
+html 
+    head
+        title="fileshare"
+        link(rel="stylesheet" href="/client.min.css")
+    body
+        #container
+            #peers
+            #files
+                .item: input(type="file")
+
+        script(src="/socket.io/socket.io.js" defer)
+        script(src="/client.min.js" defer)
