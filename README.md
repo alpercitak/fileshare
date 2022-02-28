@@ -1,8 +1,8 @@
 # fileshare
 
-multiparty, realtime file sharing using websockets\
+multiparty, realtime file sharing using websockets
 
-create an .env file using the template of .env.example\
+create an .env file using the template of .env.example
 
 run the project locally
 
