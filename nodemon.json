@@ -1,0 +1,8 @@
+{   
+    "ignore": [
+        "views/*", 
+        "public/*", 
+        "README",
+        "nodemon.json"
+    ] 
+}
