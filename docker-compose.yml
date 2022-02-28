@@ -1,0 +1,12 @@
+version: '3'
+services:
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${NAME}:local
+    volumes:
+      - ./:/usr/app/
+    ports:
+      - ${PORT}:${PORT}
