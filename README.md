@@ -1,5 +1,24 @@
 # fileshare
 
-multiparty, realtime file sharing using websockets
+multiparty, realtime file sharing using websockets\
 
-npm install && npm run start
+create an .env file using the template of .env.example\
+
+run the project locally
+
+```
+npm i (or yarn install)
+npm run start
+```
+
+run the project on docker
+
+```
+docker-compose up --build
+```
+
+bundling assets
+
+```
+npx webpack
+```
