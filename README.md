@@ -2,4 +2,15 @@
 
 multiparty, realtime file sharing using websockets
 
-npm install && npm run start
+run the project locally
+
+```
+npm i (or yarn install)
+npm run start
+```
+
+bundling assets
+
+```
+npx webpack
+```
