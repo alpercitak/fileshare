@@ -1,7 +1,8 @@
 import "./client.less";
 
+const socket_host = document.getElementById("socket-host").value;
 const options = {query: {}, forceNew: true};
-const socket = io.connect("ws://localhost:4001", options);
+const socket = io.connect(`ws://${socket_host}`, options);
 const hash = {};
 
 const dataSizeReducer = (accumulator, currentValue) => accumulator + currentValue;

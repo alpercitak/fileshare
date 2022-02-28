@@ -1,6 +1,6 @@
 html 
     head
-        title=title
+        title=TITLE
         link(rel="stylesheet" href="/client.min.css")
     body
         #container
@@ -8,5 +8,6 @@ html
             #files
                 .item: input(type="file")
 
-        script(src="/socket.io/socket.io.js" defer)
+            input#socket-host(type="hidden" value=SOCKET_HOST)
+        script(src=`${SOCKET_PROTOCOL}://${SOCKET_HOST}/socket.io/socket.io.js` defer)
         script(src="/client.min.js" defer)
