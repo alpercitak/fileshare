@@ -1,9 +1,15 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const path = require("path");
 
 const config = {
-    port: process.env.PORT || 4001
+    "dirname": __dirname,
+    "name": process.env.NAME,
+    "title": process.env.NAME_READABLE,
+    "http": {
+        port: process.env.PORT
+    }
 };
 
 const app = express();
@@ -36,7 +42,7 @@ const httpServer = http.createServer(app);
         io.emit("getPeers", Array.from(ids));
     });
 
-    console.log('fileshare websocket-server started on %s:%d', new Date(Date.now()), config.port);
+    console.log(`${config.name} websocket-server started on ${new Date(Date.now())}:${config.http.port}`);
 })();
 
 // init http server
@@ -45,12 +51,16 @@ const httpServer = http.createServer(app);
     app.set("views", path.join(__dirname, "/views"));
     app.use(express.static("public"));
 
+    app.use(async (req, res, next) => {
+        res.locals.title = config.title;
+        return next();
+    });
     app.get("/", async (req, res) => {
         return res.render("home.pug");
     });
 
     httpServer.timeout = 0;
-    httpServer.listen(config.port);
+    httpServer.listen(config.http.port);
 
-    console.log('fileshare http-server started on %s:%d', new Date(Date.now()), config.port);
+    console.log(`${config.name} http-server started on ${new Date(Date.now())}:${config.http.port}`);
 })();
