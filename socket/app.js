@@ -1,23 +1,23 @@
-require('dotenv').config();
+require("dotenv").config();
 
 const config = {
-    "dirname": __dirname,
-    "name": process.env.NAME,
-    "title": process.env.NAME_READABLE,
-    "http": {
-        port: process.env.PORT
-    }
+    dirname: __dirname,
+    name: process.env.NAME,
+    title: process.env.NAME_READABLE,
+    http: {
+        port: process.env.PORT,
+    },
 };
 
 const options = {
     pingInterval: 4000,
     pingTimeout: 8000,
     cors: {
-        origin: '*',
-    }
+        origin: "*",
+    },
 };
 
-const io = require('socket.io')(options);
+const io = require("socket.io")(options);
 
 io.on("connection", async (socket) => {
     socket.on("disconnect", async (reason) => {

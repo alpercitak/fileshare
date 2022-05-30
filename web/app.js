@@ -1,15 +1,15 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
+require("dotenv").config();
+const express = require("express");
+const http = require("http");
 const path = require("path");
 
 const config = {
-    "dirname": __dirname,
-    "name": process.env.NAME,
-    "title": process.env.NAME_READABLE,
-    "http": {
-        port: process.env.PORT
-    }
+    dirname: __dirname,
+    name: process.env.NAME,
+    title: process.env.NAME_READABLE,
+    http: {
+        port: process.env.PORT,
+    },
 };
 
 const app = express();

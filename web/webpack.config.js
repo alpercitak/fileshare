@@ -1,8 +1,8 @@
-const path = require('path');
-const util = require('util');
-const TerserJSPlugin = require('terser-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const path = require("path");
+const util = require("util");
+const TerserJSPlugin = require("terser-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 
 const config = {
     optimization: {
@@ -11,25 +11,25 @@ const config = {
     module: {
         rules: [
             {
-                loader: 'babel-loader',
+                loader: "babel-loader",
                 test: /\.m?js$/,
                 // exclude: /(node_modules|bower_components)/,
                 options: {
-                    presets: ['@babel/preset-env'],
-                    plugins: ['@babel/plugin-transform-runtime']
-                }
+                    presets: ["@babel/preset-env"],
+                    plugins: ["@babel/plugin-transform-runtime"],
+                },
             },
             {
                 test: /\.less|\.css$/,
                 use: [
                     {
-                        loader: MiniCssExtractPlugin.loader
+                        loader: MiniCssExtractPlugin.loader,
                     },
                     {
-                        loader: 'css-loader'
+                        loader: "css-loader",
                     },
                     {
-                        loader: 'less-loader',
+                        loader: "less-loader",
                         options: {
                             lessOptions: {
                                 strictMath: true,
@@ -42,43 +42,39 @@ const config = {
                 test: /\.(png|jpe?g|gif)$/i,
                 use: [
                     {
-                        loader: 'file-loader',
+                        loader: "file-loader",
                     },
                 ],
             },
-        ]
+        ],
     },
     resolve: {
         alias: {
-            "jquery": path.join(__dirname, "./public/lib/jquery.stub/main.js")
-        }
+            jquery: path.join(__dirname, "./public/lib/jquery.stub/main.js"),
+        },
     },
     plugins: [
         new MiniCssExtractPlugin({
-            filename: '[name].min.css',
-            chunkFilename: '[id].css',
+            filename: "[name].min.css",
+            chunkFilename: "[id].css",
         }),
     ],
     watch: true,
     watchOptions: {
-        ignored: ['node_modules/**']
+        ignored: ["node_modules/**"],
     },
-    mode: "production"
+    mode: "production",
 };
 
 const exportables = [];
-const items = [
-    {name: "client", path: "client.js"}
-];
+const items = [{ name: "client", path: "client.js" }];
 items.map((x) => {
     exportables.push({
         ...config,
         name: x.name,
-        entry: {[x.name]: path.join(__dirname, "public/", x.path)},
-        output: {path: path.join(__dirname, "public"), filename: x.name + ".min.js"}
+        entry: { [x.name]: path.join(__dirname, "public/", x.path) },
+        output: { path: path.join(__dirname, "public"), filename: x.name + ".min.js" },
     });
 });
 
-module.exports = [
-    ...exportables
-];
+module.exports = [...exportables];
