@@ -7,15 +7,24 @@
 	"license": "MIT",
 	"scripts": {
 		"husky:configure": "npx husky install && npx husky add .husky/pre-commit \"npx --no-install lint-staged\"",
-		"prettier:run": "npx prettier --write ."
+		"prettier:write": "npx prettier --write .",
+		"eslint:fix": "npx eslint --fix"
 	},
 	"devDependencies": {
-		"prettier": "^2.6.2",
-		"lint-staged": "^12.4.3"
+		"eslint": "^8.16.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-config-standard": "^17.0.0",
+		"eslint-plugin-import": "^2.25.2",
+		"eslint-plugin-json": "^3.1.0",
+		"eslint-plugin-n": "^15.0.0",
+		"eslint-plugin-promise": "^6.0.0",
+		"lint-staged": "^12.4.3",
+		"prettier": "^2.6.2"
 	},
 	"lint-staged": {
 		"**/*.{js,jsx,json}": [
-			"prettier --write ."
+			"prettier --write .",
+			"eslint --fix"
 		]
 	},
 	"husky": {
