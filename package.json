@@ -6,9 +6,21 @@
 	"author": "Alper Çıtak <citak.alper@gmail.com>",
 	"license": "MIT",
 	"scripts": {
+		"husky:configure": "npx husky install && npx husky add .husky/pre-commit \"npx --no-install lint-staged\"",
 		"prettier:run": "npx prettier --write ."
 	},
 	"devDependencies": {
-		"prettier": "^2.6.2"
+		"prettier": "^2.6.2",
+		"lint-staged": "^12.4.3"
+	},
+	"lint-staged": {
+		"**/*.{js,jsx,json}": [
+			"prettier --write ."
+		]
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
 	}
 }
