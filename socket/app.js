@@ -20,7 +20,7 @@ const options = {
 const io = require("socket.io")(options);
 
 io.on("connection", async (socket) => {
-	socket.on("disconnect", async (reason) => {
+	socket.on("disconnect", async () => {
 		const ids = await io.allSockets();
 		io.emit("getPeers", Array.from(ids));
 	});
