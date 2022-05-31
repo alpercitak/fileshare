@@ -1,0 +1,14 @@
+{
+	"name": "fileshare",
+	"version": "1.0.0",
+	"main": "index.js",
+	"repository": "https://github.com/alpercitak/fileshare.git",
+	"author": "Alper Çıtak <citak.alper@gmail.com>",
+	"license": "MIT",
+	"scripts": {
+		"prettier:run": "npx prettier --write ."
+	},
+	"devDependencies": {
+		"prettier": "^2.6.2"
+	}
+}
