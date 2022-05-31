@@ -1,24 +1,23 @@
-version: '3'
+version: "3"
 services:
+    socket:
+        build:
+            context: ./socket
+            dockerfile: Dockerfile
+        image: fileshare-socket:local
+        volumes:
+            - ./socket:/usr/app/
+            - ./socket/node_modules:/usr/app/node_modules/
+        ports:
+            - 4001:4001
 
-  socket:
-    build:
-      context: ./socket
-      dockerfile: Dockerfile
-    image: fileshare-socket:local
-    volumes:
-      - ./socket:/usr/app/
-      - ./socket/node_modules:/usr/app/node_modules/
-    ports:
-      - 4001:4001
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    image: fileshare-web:local
-    volumes:
-      - ./web:/usr/app/
-      - ./web/node_modules:/usr/app/node_modules/
-    ports:
-      - 4002:4002
+    web:
+        build:
+            context: ./web
+            dockerfile: Dockerfile
+        image: fileshare-web:local
+        volumes:
+            - ./web:/usr/app/
+            - ./web/node_modules:/usr/app/node_modules/
+        ports:
+            - 4002:4002
