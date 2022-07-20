@@ -3,10 +3,23 @@
 	"version": "1.0.0",
 	"main": "app.js",
 	"scripts": {
-		"start": "node app.js"
+		"start": "node app.js",
+		"start:dev": "nodemon app.js"
 	},
 	"dependencies": {
 		"dotenv": "^16.0.0",
 		"socket.io": "^4.4.1"
+	},
+	"devDependencies": {
+		"nodemon": "^2.0.19"
+	},
+	"nodemonConfig": {
+		"ignore": [
+			"views/*",
+			"public/*",
+			"README",
+			"nodemon.json",
+			"package.json"
+		]
 	}
 }
