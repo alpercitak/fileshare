@@ -25,22 +25,19 @@ COPY --from=build-socket /app/socket ./socket
 
 CMD ["node", "socket/app.js"]
 
-FROM base AS build-web
+FROM base AS build-client
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY web ./web
+COPY client ./client
 
-RUN rm -rf ./node_modules
-RUN rm -rf ./web/node_modules
-RUN pnpm install -r --offline --prod --filter=./web 
+RUN pnpm i --offline
+RUN pnpm run --filter=./client build
 
-FROM node:18-alpine AS deploy-web
+FROM nginx:1.23.3-alpine-slim AS deploy-client
 
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build-web /app/node_modules/ ./node_modules
-COPY --from=build-web /app/web/node_modules ./web/node_modules
-COPY --from=build-web /app/web ./web
+WORKDIR /usr/share/nginx/html
+RUN rm -rf ./*
+COPY --from=build-client /app/client/dist .
+ENTRYPOINT [ "nginx", "-g", "daemon off;" ]
 
-CMD ["node", "web/app.js"]

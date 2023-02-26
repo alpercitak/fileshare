@@ -2,4 +2,4 @@ dev:
 	pnpm dev
 
 deploy:
-	docker-compose up --build
+	docker-compose up --remove-orphans --build

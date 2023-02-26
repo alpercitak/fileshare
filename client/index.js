@@ -1,7 +1,8 @@
-import "./client.less";
+import "./index.less";
 
 const socket_host = document.getElementById("socket-host").value;
 const options = { query: {}, forceNew: true };
+// eslint-disable-next-line no-undef
 const socket = io.connect(`ws://${socket_host}`, options);
 const hash = {};
 
@@ -80,7 +81,6 @@ socket.on("chunk", (data) => {
 			};
 			reader.onerror = (error) => {
 				return resolve({ error: error });
-				console.log("Error: ", error);
 			};
 		});
 	};
@@ -96,7 +96,7 @@ socket.on("chunk", (data) => {
 		return chunks;
 	};
 
-	inpFile.onchange = (event) => {
+	inpFile.onchange = () => {
 		const fileList = inpFile.files;
 		const file = fileList[0];
 
