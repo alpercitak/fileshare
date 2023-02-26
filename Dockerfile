@@ -36,6 +36,8 @@ RUN pnpm run --filter=./client build
 
 FROM nginx:1.23.3-alpine-slim AS deploy-client
 
+COPY ./client/nginx.conf /etc/nginx/conf.d/default.conf
+
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 COPY --from=build-client /app/client/dist .
