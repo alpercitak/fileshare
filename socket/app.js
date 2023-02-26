@@ -1,13 +1,4 @@
-require("dotenv").config();
-
-const config = {
-	dirname: __dirname,
-	name: process.env.NAME,
-	title: process.env.NAME_READABLE,
-	http: {
-		port: process.env.PORT,
-	},
-};
+const PORT = 4001;
 
 const options = {
 	pingInterval: 4000,
@@ -38,6 +29,6 @@ io.on("connection", async (socket) => {
 	io.emit("getPeers", Array.from(ids));
 });
 
-io.listen(config.http.port);
+io.listen(PORT);
 
-console.log(`${config.name} websocket-server started on ${new Date(Date.now())}:${config.http.port}`);
+console.log(`fileshare-server started on ${new Date(Date.now())}: ${PORT}`);

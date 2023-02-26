@@ -1,24 +1,46 @@
 FROM node:18-alpine AS base
 
 RUN npm i -g pnpm
+WORKDIR /app
+COPY pnpm-lock.yaml ./
+RUN pnpm fetch
 
-FROM base AS socket-deploy
+FROM base AS build-socket
 
 WORKDIR /app
-COPY ./socket/package*.json ./socket/pnpm-lock.yaml ./
-RUN pnpm install --prod
-COPY ./socket .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY socket ./socket
 
-EXPOSE 4001
-CMD [ "node", "app.js"]
+RUN rm -rf ./node_modules
+RUN rm -rf ./socket/node_modules
+RUN pnpm install -r --offline --prod --filter=./socket 
 
-FROM base AS web-deploy
+FROM node:18-alpine AS deploy-socket
 
 WORKDIR /app
-COPY ./web/package*.json ./web/pnpm-lock.yaml ./
-RUN pnpm install --prod
-COPY ./web .
+ENV NODE_ENV=production
+COPY --from=build-socket /app/node_modules/ ./node_modules
+COPY --from=build-socket /app/socket/node_modules ./socket/node_modules
+COPY --from=build-socket /app/socket ./socket
 
-EXPOSE 4002
-CMD [ "node", "app.js"]
+CMD ["node", "socket/app.js"]
 
+FROM base AS build-web
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY web ./web
+
+RUN rm -rf ./node_modules
+RUN rm -rf ./web/node_modules
+RUN pnpm install -r --offline --prod --filter=./web 
+
+FROM node:18-alpine AS deploy-web
+
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build-web /app/node_modules/ ./node_modules
+COPY --from=build-web /app/web/node_modules ./web/node_modules
+COPY --from=build-web /app/web ./web
+
+CMD ["node", "web/app.js"]

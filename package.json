@@ -6,7 +6,7 @@
 	"author": "Alper Çıtak <citak.alper@gmail.com>",
 	"license": "MIT",
 	"scripts": {
-		"start:dev": "(cd ./web && pnpm start:dev) & (cd ./socket && pnpm start:dev)",
+		"dev": "pnpm --stream -r dev",
 		"husky:configure": "npx husky install && npx husky add .husky/pre-commit \"npx --no-install lint-staged\"",
 		"prettier:write": "npx prettier --write .",
 		"eslint:fix": "npx eslint --fix"

@@ -1,31 +1,15 @@
 version: "3"
 services:
-  # socket:
-  #   build:
-  #     context: ./socket
-  #     dockerfile: Dockerfile
-  #   image: fileshare-socket:local
-  #   ports:
-  #     - 4001:4001
-
-  # web:
-  #   build:
-  #     context: ./web
-  #     dockerfile: Dockerfile
-  #   image: fileshare-web:local
-  #   ports:
-  #     - 4002:4002
-
   socket:
-    image: fileshare-socket:local
+    image: fileshare-socket
     build:
-      target: socket-deploy
+      target: deploy-socket
     ports:
       - 4001:4001
 
   web:
-    image: fileshare-web:local
+    image: fileshare-web
     build:
-      target: web-deploy
+      target: deploy-web
     ports:
       - 4002:4002
