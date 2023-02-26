@@ -1,9 +1,9 @@
 version: "3"
 services:
-  fileshare-socket:
-    image: fileshare-socket
+  fileshare-server:
+    image: fileshare-server
     build:
-      target: deploy-socket
+      target: deploy-server
     ports:
       - 4001:4001
   fileshare-client:

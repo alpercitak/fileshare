@@ -33,7 +33,7 @@ importers:
     devDependencies:
       less: 4.1.3
 
-  socket:
+  server:
     specifiers:
       socket.io: ^4.4.1
     dependencies:

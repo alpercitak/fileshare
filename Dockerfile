@@ -5,25 +5,25 @@ WORKDIR /app
 COPY pnpm-lock.yaml ./
 RUN pnpm fetch
 
-FROM base AS build-socket
+FROM base AS build-server
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY socket ./socket
+COPY server ./server
 
 RUN rm -rf ./node_modules
-RUN rm -rf ./socket/node_modules
-RUN pnpm install -r --offline --prod --filter=./socket 
+RUN rm -rf ./server/node_modules
+RUN pnpm install -r --offline --prod --filter=./server 
 
-FROM node:18-alpine AS deploy-socket
+FROM node:18-alpine AS deploy-server
 
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build-socket /app/node_modules/ ./node_modules
-COPY --from=build-socket /app/socket/node_modules ./socket/node_modules
-COPY --from=build-socket /app/socket ./socket
+COPY --from=build-server /app/node_modules/ ./node_modules
+COPY --from=build-server /app/server/node_modules ./server/node_modules
+COPY --from=build-server /app/server ./server
 
-CMD ["node", "socket/app.js"]
+CMD ["node", "server/app.js"]
 
 FROM base AS build-client
 
@@ -40,4 +40,3 @@ WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 COPY --from=build-client /app/client/dist .
 ENTRYPOINT [ "nginx", "-g", "daemon off;" ]
-
