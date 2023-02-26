@@ -22,6 +22,42 @@
 		"lint-staged": "^12.4.3",
 		"prettier": "^2.6.2"
 	},
+	"eslintConfig": {
+		"env": {
+			"browser": true,
+			"node": true,
+			"es6": true,
+			"commonjs": true
+		},
+		"extends": [
+			"eslint:recommended",
+			"plugin:json/recommended",
+			"prettier"
+		],
+		"parserOptions": {
+			"ecmaVersion": 2018,
+			"sourceType": "module"
+		},
+		"rules": {
+			"indent": [
+				"warn",
+				"tab"
+			],
+			"quotes": [
+				"error",
+				"double"
+			],
+			"semi": [
+				"error",
+				"always"
+			]
+		},
+		"ignorePatterns": [
+			"node_modules",
+			"**/node_modules",
+			"**/public"
+		]
+	},
 	"lint-staged": {
 		"**/*.{js,jsx,json}": [
 			"prettier --write .",
