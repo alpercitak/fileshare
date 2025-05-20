@@ -1,42 +1,41 @@
-import "./index.less";
+import './index.less';
 
-const socket_host = document.getElementById("socket-host").value;
+const socket_host = document.getElementById('socket-host').value;
 const options = { query: {}, forceNew: true };
-// eslint-disable-next-line no-undef
 const socket = io.connect(`ws://${socket_host}`, options);
 const hash = {};
 
 const dataSizeReducer = (accumulator, currentValue) => accumulator + currentValue;
 
-socket.on("connect", () => {
-	socket.emit("getPeers");
+socket.on('connect', () => {
+	socket.emit('getPeers');
 });
 
-socket.on("getPeers", (ids) => {
-	const container = document.getElementById("peers");
+socket.on('getPeers', (ids) => {
+	const container = document.getElementById('peers');
 
-	let html = "<div class='item'>Peers (" + ids.length + ")</div>";
+	let html = "<div class='item'>Peers (" + ids.length + ')</div>';
 	for (let i in ids) {
-		html += "<div class='item'>" + ids[i] + "</div>";
+		html += "<div class='item'>" + ids[i] + '</div>';
 	}
 	container.innerHTML = html;
 });
 
-socket.on("metadata", (data) => {
+socket.on('metadata', (data) => {
 	if (!hash[data.id]) hash[data.id] = { indexTotal: data.indexTotal, chunks: [] };
 	const metadata = JSON.parse(atob(data.id));
-	const container = document.getElementById("files");
-	const div = document.createElement("div");
-	div.classList.add("item");
+	const container = document.getElementById('files');
+	const div = document.createElement('div');
+	div.classList.add('item');
 	div.innerHTML = data.id;
 	div.id = data.id;
-	div.setAttribute("data-size", metadata.size);
+	div.setAttribute('data-size', metadata.size);
 	container.append(div);
 });
 
-socket.on("chunk", (data) => {
+socket.on('chunk', (data) => {
 	if (!hash[data.id]) {
-		console.log("not found: " + data.id);
+		console.log('not found: ' + data.id);
 		return {};
 	}
 	hash[data.id].chunks.push(data);
@@ -46,9 +45,9 @@ socket.on("chunk", (data) => {
 		const container = document.getElementById(k);
 		const metadata = JSON.parse(atob(k));
 		const dataCurrent = o.chunks.map((x) => parseInt(x.data.length)).reduce(dataSizeReducer);
-		const dataTotal = parseInt(container.getAttribute("data-size") || 0);
+		const dataTotal = parseInt(container.getAttribute('data-size') || 0);
 		const percentage = (dataCurrent / dataTotal) * 100;
-		let innerHTML = metadata.name + "<br />" + parseInt(percentage) + " / " + 100 + "%";
+		let innerHTML = metadata.name + '<br />' + parseInt(percentage) + ' / ' + 100 + '%';
 
 		if (o.indexTotal == o.chunks.length) {
 			o.chunks = o.chunks.map((x) => {
@@ -58,18 +57,18 @@ socket.on("chunk", (data) => {
 			o.chunks.sort((a, b) => {
 				return a.index < b.index ? -1 : 1;
 			});
-			const base64 = o.chunks.map((x) => x.data).join("");
+			const base64 = o.chunks.map((x) => x.data).join('');
 			innerHTML += " <a href='" + base64 + "' download='" + metadata.name + "'>Download</a>";
 		}
 
 		container.innerHTML = innerHTML;
-		container.classList.add("progress");
-		container.style.width = percentage + "%";
+		container.classList.add('progress');
+		container.style.width = percentage + '%';
 	});
 });
 
 (() => {
-	const inpFile = document.querySelector("input[type=file]");
+	const inpFile = document.querySelector('input[type=file]');
 
 	const getBase64 = (file) => {
 		return new Promise((resolve) => {
@@ -111,11 +110,11 @@ socket.on("chunk", (data) => {
 			};
 			const id = btoa(JSON.stringify(metadata));
 
-			socket.emit("metadata", { id: id, indexTotal: chunks.length });
+			socket.emit('metadata', { id: id, indexTotal: chunks.length });
 
 			for (const i in chunks) {
 				// setTimeout(() => {socket.emit("chunk", {id: id, index: i, data: chunks[i]});}, i * 1000);
-				socket.emit("chunk", { id: id, index: i, data: chunks[i] });
+				socket.emit('chunk', { id: id, index: i, data: chunks[i] });
 			}
 		});
 	};
