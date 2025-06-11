@@ -1,72 +1,72 @@
 {
-	"name": "fileshare",
-	"version": "1.0.0",
-	"main": "index.js",
-	"repository": "https://github.com/alpercitak/fileshare.git",
-	"author": "Alper Çıtak <citak.alper@gmail.com>",
-	"license": "MIT",
-	"scripts": {
-		"dev": "pnpm --stream -r dev",
-		"husky:configure": "npx husky install && npx husky add .husky/pre-commit \"npx --no-install lint-staged\"",
-		"prettier:write": "npx prettier --write .",
-		"eslint:fix": "npx eslint --fix"
-	},
-	"devDependencies": {
-		"eslint": "^9.28.0",
-		"eslint-config-prettier": "^10.1.5",
-		"eslint-config-standard": "^17.1.0",
-		"eslint-plugin-import": "^2.31.0",
-		"eslint-plugin-json": "^4.0.1",
-		"eslint-plugin-n": "^17.19.0",
-		"eslint-plugin-promise": "^7.2.1",
-		"lint-staged": "^16.1.0",
-		"prettier": "^3.5.3"
-	},
-	"eslintConfig": {
-		"env": {
-			"browser": true,
-			"node": true,
-			"es6": true,
-			"commonjs": true
-		},
-		"extends": [
-			"eslint:recommended",
-			"plugin:json/recommended",
-			"prettier"
-		],
-		"parserOptions": {
-			"ecmaVersion": 2018,
-			"sourceType": "module"
-		},
-		"rules": {
-			"indent": [
-				"warn",
-				"tab"
-			],
-			"quotes": [
-				"error",
-				"double"
-			],
-			"semi": [
-				"error",
-				"always"
-			]
-		},
-		"ignorePatterns": [
-			"node_modules",
-			"**/node_modules",
-			"**/public"
-		]
-	},
-	"lint-staged": {
-		"**/*.{js,jsx,json}": [
-			"prettier --write .",
-			"eslint --fix"
-		]
-	},
-	"husky": {
-		"hooks": {
-			"pre-commit": "lint-staged"
-		}
-	}
+  "name": "fileshare",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/alpercitak/fileshare.git",
+  "author": "Alper Çıtak <citak.alper@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "pnpm --stream -r dev",
+    "husky:configure": "npx husky install && npx husky add .husky/pre-commit \"npx --no-install lint-staged\"",
+    "prettier:write": "npx prettier --write .",
+    "eslint:fix": "npx eslint --fix"
+  },
+  "devDependencies": {
+    "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-json": "^4.0.1",
+    "eslint-plugin-n": "^17.19.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "lint-staged": "^16.1.0",
+    "prettier": "^3.5.3"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "node": true,
+      "es6": true,
+      "commonjs": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:json/recommended",
+      "prettier"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2018,
+      "sourceType": "module"
+    },
+    "rules": {
+      "indent": [
+        "warn",
+        "tab"
+      ],
+      "quotes": [
+        "error",
+        "double"
+      ],
+      "semi": [
+        "error",
+        "always"
+      ]
+    },
+    "ignorePatterns": [
+      "node_modules",
+      "**/node_modules",
+      "**/public"
+    ]
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,json}": [
+      "prettier --write .",
+      "eslint --fix"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
 }
