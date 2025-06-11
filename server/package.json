@@ -1,11 +1,11 @@
 {
-	"name": "fileshare-server",
-	"version": "1.0.0",
-	"main": "app.js",
-	"scripts": {
-		"dev": "node --watch app.js"
-	},
-	"dependencies": {
-		"socket.io": "^4.4.1"
-	}
+  "name": "fileshare-server",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.4.1"
+  }
 }
