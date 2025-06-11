@@ -1,4 +1,5 @@
 import './index.less';
+import { io } from 'socket.io-client';
 
 const socket_host = document.getElementById('socket-host').value;
 const options = { query: {}, forceNew: true };
@@ -22,7 +23,9 @@ socket.on('getPeers', (ids) => {
 });
 
 socket.on('metadata', (data) => {
-  if (!hash[data.id]) hash[data.id] = { indexTotal: data.indexTotal, chunks: [] };
+  if (!hash[data.id]) {
+    hash[data.id] = { indexTotal: data.indexTotal, chunks: [] };
+  }
   const metadata = JSON.parse(atob(data.id));
   const container = document.getElementById('files');
   const div = document.createElement('div');
