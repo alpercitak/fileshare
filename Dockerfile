@@ -31,7 +31,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY client ./client
 
-RUN pnpm i --offline
+RUN pnpm i 
 RUN pnpm run --filter=./client build
 
 FROM nginx:1.29.4-alpine-slim AS deploy-client
