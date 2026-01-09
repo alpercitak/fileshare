@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:24-alpine AS base
 
 RUN npm i -g pnpm
 WORKDIR /app
@@ -15,7 +15,7 @@ RUN rm -rf ./node_modules
 RUN rm -rf ./server/node_modules
 RUN pnpm install -r --offline --prod --filter=./server 
 
-FROM node:18-alpine AS deploy-server
+FROM node:24-alpine AS deploy-server
 
 WORKDIR /app
 ENV NODE_ENV=production
