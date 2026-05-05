@@ -5,4 +5,10 @@ export default defineConfig({
     jsx: 'automatic',
     jsxImportSource: 'preact',
   },
+  resolve: {
+    alias: {
+      react: 'preact/compat',
+      'react-dom': 'preact/compat',
+    },
+  },
 });
