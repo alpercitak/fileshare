@@ -1,5 +1,9 @@
 # Fileshare
 
+![Build](https://img.shields.io/github/actions/workflow/status/alpercitak/fileshare/build.yaml?branch=main&label=Build&color=4ade80&style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-4ade80.svg?style=flat-square)
+![Bun](https://img.shields.io/badge/Bun-%3E%3D1.0-black?style=flat-square&logo=bun)
+
 **Direct browser-to-browser payloads via WebRTC. Hardened with AES-GCM 256 & ECDH.**
 
 `fileshare` is a high-performance, zero-knowledge file distribution utility. It demonstrates advanced orchestration of browser-native APIs to achieve secure, serverless data streaming with a focus on memory efficiency and cryptographic integrity.
