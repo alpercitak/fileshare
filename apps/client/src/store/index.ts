@@ -1,13 +1,13 @@
 import { atom } from 'jotai';
-import type { Socket } from 'socket.io-client';
-import type { ChunkEvent, FileTransfer, Metadata, MetadataEvent, PeerId } from '@/types';
+import type { ChunkEvent, ClientMessage, Metadata, MetadataEvent, PeerId } from '@fileshare/shared';
+import type { FileshareSocket, FileTransfer } from '@/types';
 import { CHUNK_SIZE, chunkSubstr, decodeMetadata, readFileAsDataUrl } from '@/utils';
 
 export const peersAtom = atom<Array<PeerId>>([]);
 export const filesAtom = atom<Record<string, FileTransfer>>({});
-export const socketAtom = atom<Socket | null>(null);
+export const socketAtom = atom<FileshareSocket | null>(null);
 
-export const setSocketAtom = atom(null, (_get, set, socket: Socket | null) => {
+export const setSocketAtom = atom(null, (_get, set, socket: FileshareSocket | null) => {
   set(socketAtom, socket);
 });
 
@@ -50,7 +50,7 @@ export const receiveChunkAtom = atom(null, (get, set, data: ChunkEvent) => {
 export const sendFileAtom = atom(null, async (get, _set, file: File) => {
   const socket = get(socketAtom);
 
-  if (!socket) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
     return;
   }
 
@@ -64,9 +64,19 @@ export const sendFileAtom = atom(null, async (get, _set, file: File) => {
   };
   const id = btoa(JSON.stringify(metadata));
 
-  socket.emit('metadata', { id, indexTotal: chunks.length });
+  const metadataMessage: ClientMessage = {
+    payload: { id, indexTotal: chunks.length },
+    type: 'metadata',
+  };
+
+  socket.send(JSON.stringify(metadataMessage));
 
   chunks.forEach((chunk, index) => {
-    socket.emit('chunk', { data: chunk, id, index });
+    const chunkMessage: ClientMessage = {
+      payload: { data: chunk, id, index },
+      type: 'chunk',
+    };
+
+    socket.send(JSON.stringify(chunkMessage));
   });
 });

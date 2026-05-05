@@ -1,46 +1,69 @@
-import { Server, type Socket } from 'socket.io';
+import type { ServerWebSocket } from 'bun';
+import type { ClientMessage, PeerId, ServerMessage } from '@fileshare/shared';
 
 const PORT = 4001;
 
-const io = new Server({
-  pingInterval: 4000,
-  pingTimeout: 8000,
-  cors: {
-    origin: '*',
-  },
-});
+const clients = new Map<ServerWebSocket<unknown>, PeerId>();
 
-const emitPeers = async (socket?: Socket) => {
-  const ids = Array.from(await io.allSockets());
+const send = (socket: ServerWebSocket<unknown>, message: ServerMessage) => {
+  socket.send(JSON.stringify(message));
+};
+
+const emitPeers = (socket?: ServerWebSocket<unknown>) => {
+  const peers = Array.from(clients.values());
+  const message: ServerMessage = {
+    payload: peers,
+    type: 'peers',
+  };
 
   if (socket) {
-    socket.emit('getPeers', ids);
+    send(socket, message);
     return;
   }
 
-  io.emit('getPeers', ids);
+  for (const client of clients.keys()) {
+    send(client, message);
+  }
 };
 
-io.on('connection', (socket) => {
-  socket.on('disconnect', async () => {
-    await emitPeers();
-  });
+const server = Bun.serve({
+  fetch(req, server) {
+    if (server.upgrade(req)) {
+      return;
+    }
 
-  socket.on('getPeers', async () => {
-    await emitPeers(socket);
-  });
+    return new Response('Expected a WebSocket upgrade', { status: 426 });
+  },
+  port: PORT,
+  websocket: {
+    close(socket) {
+      clients.delete(socket);
+      emitPeers();
+    },
+    message(socket, rawMessage) {
+      const message = JSON.parse(rawMessage.toString()) as ClientMessage;
 
-  socket.on('chunk', (data) => {
-    io.emit('chunk', data);
-  });
-
-  socket.on('metadata', (data) => {
-    io.emit('metadata', data);
-  });
-
-  void emitPeers();
+      switch (message.type) {
+        case 'getPeers':
+          emitPeers(socket);
+          break;
+        case 'metadata':
+          for (const client of clients.keys()) {
+            send(client, { payload: message.payload, type: 'metadata' });
+          }
+          break;
+        case 'chunk':
+          for (const client of clients.keys()) {
+            send(client, { payload: message.payload, type: 'chunk' });
+          }
+          break;
+      }
+    },
+    open(socket) {
+      clients.set(socket, crypto.randomUUID());
+      emitPeers();
+    },
+  },
 });
 
-io.listen(PORT);
-
-console.log(`fileshare-server started on ${new Date().toISOString()}: ${PORT}`);
+console.log(`fileshare-server started on ${new Date().toISOString()}: ${server.port}`);

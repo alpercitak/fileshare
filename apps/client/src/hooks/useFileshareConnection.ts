@@ -1,8 +1,7 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'preact/hooks';
-import { io } from 'socket.io-client';
-import { receiveChunkAtom, receiveMetadataAtom, setPeersAtom, setSocketAtom, socketAtom } from '../store';
-import type { ChunkEvent, MetadataEvent, PeerId } from '../types';
+import type { ChunkEvent, ClientMessage, MetadataEvent, ServerMessage } from '@fileshare/shared';
+import { receiveChunkAtom, receiveMetadataAtom, setPeersAtom, setSocketAtom, socketAtom } from '@/store';
 
 const SOCKET_HOST = 'localhost:4001';
 
@@ -14,31 +13,34 @@ export const useFileshareConnection = () => {
   const receiveChunk = useSetAtom(receiveChunkAtom);
 
   useEffect(() => {
-    const nextSocket = io(`ws://${SOCKET_HOST}`, {
-      forceNew: true,
-      query: {},
-    });
+    const nextSocket = new WebSocket(`ws://${SOCKET_HOST}`);
 
     setSocket(nextSocket);
 
-    nextSocket.on('connect', () => {
-      nextSocket.emit('getPeers');
+    nextSocket.addEventListener('open', () => {
+      const message: ClientMessage = { type: 'getPeers' };
+
+      nextSocket.send(JSON.stringify(message));
     });
 
-    nextSocket.on('getPeers', (ids: Array<PeerId>) => {
-      setPeers(ids);
-    });
+    nextSocket.addEventListener('message', (event) => {
+      const message = JSON.parse(event.data) as ServerMessage;
 
-    nextSocket.on('metadata', (data: MetadataEvent) => {
-      receiveMetadata(data);
-    });
-
-    nextSocket.on('chunk', (data: ChunkEvent) => {
-      receiveChunk(data);
+      switch (message.type) {
+        case 'peers':
+          setPeers(message.payload);
+          break;
+        case 'metadata':
+          receiveMetadata(message.payload as MetadataEvent);
+          break;
+        case 'chunk':
+          receiveChunk(message.payload as ChunkEvent);
+          break;
+      }
     });
 
     return () => {
-      nextSocket.disconnect();
+      nextSocket.close();
       setSocket(null);
     };
   }, [receiveChunk, receiveMetadata, setPeers, setSocket]);

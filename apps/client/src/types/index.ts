@@ -1,22 +1,6 @@
-export type PeerId = string;
+import type { ChunkEvent, Metadata } from '@fileshare/shared';
 
-export type Metadata = {
-  now: number;
-  name: string;
-  size: number;
-  type: string;
-};
-
-export type MetadataEvent = {
-  id: string;
-  indexTotal: number;
-};
-
-export type ChunkEvent = {
-  id: string;
-  index: number | string;
-  data: string;
-};
+export type FileshareSocket = WebSocket;
 
 export type FileTransfer = {
   id: string;
