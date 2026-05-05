@@ -1,8 +1,9 @@
 # Fileshare
 
 ![Build](https://img.shields.io/github/actions/workflow/status/alpercitak/fileshare/build.yaml?branch=main&label=Build&color=4ade80&style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-4ade80.svg?style=flat-square)
-![Bun](https://img.shields.io/badge/Bun-%3E%3D1.0-black?style=flat-square&logo=bun)
+![Security](https://img.shields.io/badge/Security-E2EE%20Safe-4ade80?style=flat-square)
+![Bun](https://img.shields.io/badge/Bun-black?style=flat-square&logo=bun&logoColor=fbf0df)
+![License](https://img.shields.io/badge/License-MIT-4ade80?style=flat-square)
 
 **Direct browser-to-browser payloads via WebRTC. Hardened with AES-GCM 256 & ECDH.**
 
