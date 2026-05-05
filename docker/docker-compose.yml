@@ -1,3 +1,5 @@
+name: "fileshare"
+
 services:
   fileshare-server:
     image: fileshare-server
