@@ -2,12 +2,16 @@ services:
   fileshare-server:
     image: fileshare-server
     build:
+      context: ..
+      dockerfile: docker/Dockerfile
       target: deploy-server
     ports:
       - 4001:4001
   fileshare-client:
     image: fileshare-client
     build:
+      context: ..
+      dockerfile: docker/Dockerfile
       target: deploy-client
     ports:
-      - 4002:80
+      - 5173:80

@@ -2,4 +2,4 @@ dev:
 	bun run dev
 
 deploy:
-	docker-compose up --remove-orphans --build
+	docker compose -f docker/docker-compose.yml up --remove-orphans --build
