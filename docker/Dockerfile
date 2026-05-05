@@ -8,8 +8,9 @@ RUN bun install --frozen-lockfile
 
 FROM base AS build-server
 
-WORKDIR /app
-COPY apps/server ./apps/server
+WORKDIR /app/apps/server
+COPY apps/server ./
+RUN bun run build
 
 FROM base AS build-client
 
@@ -25,7 +26,7 @@ COPY --from=base /app/node_modules ./node_modules
 COPY --from=build-server /app/apps/server ./apps/server
 EXPOSE 4001
 
-CMD ["bun", "apps/server/app.js"]
+CMD ["bun", "apps/server/dist/index.js"]
 
 FROM nginx:1.29.4-alpine-slim AS deploy-client
 

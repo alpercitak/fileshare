@@ -1,11 +1,15 @@
 {
   "name": "@fileshare/server",
   "version": "1.0.0",
-  "main": "app.js",
+  "main": "src/index.ts",
   "scripts": {
-    "dev": "node --watch app.js"
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --target bun --outfile dist/index.js"
   },
   "dependencies": {
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13"
   }
 }
