@@ -2,9 +2,9 @@ import { FilePicker } from '@/components/FilePicker';
 import { PeerList } from '@/components/PeerList';
 import { TransferList } from '@/components/TransferList';
 import { useFileshareConnection } from '@/hooks/useFileshareConnection';
-import styles from './App.module.css';
+import styles from './Home.module.css';
 
-const App = () => {
+export const Home = () => {
   useFileshareConnection();
 
   return (
@@ -17,5 +17,3 @@ const App = () => {
     </div>
   );
 };
-
-export default App;
