@@ -1,5 +1,6 @@
-import { InboundTransfer, OutboundTransfer } from '@/types';
+import type { InboundTransfer, OutboundTransfer } from '@/types';
 import styles from './index.module.css';
+
 interface Props {
   inbound: Record<string, InboundTransfer>;
   outbound: Record<string, OutboundTransfer>;

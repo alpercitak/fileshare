@@ -121,6 +121,7 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
 
   const handleSignaling = useCallback(
     async (msg: ServerMessage) => {
+      setError(null);
       switch (msg.type) {
         case 'roomCreated':
           setRoomCode(msg.payload.roomCode);
