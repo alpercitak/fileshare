@@ -21,6 +21,6 @@ export type ChunkEvent = {
 export type FileTransfer = {
   id: string;
   indexTotal: number;
-  chunks: ChunkEvent[];
+  chunks: Array<ChunkEvent>;
   metadata: Metadata;
 };

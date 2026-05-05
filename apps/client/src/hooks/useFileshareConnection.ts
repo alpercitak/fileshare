@@ -3,7 +3,7 @@ import { useEffect } from 'preact/hooks';
 import { io } from 'socket.io-client';
 
 import { receiveChunkAtom, receiveMetadataAtom, setPeersAtom, setSocketAtom, socketAtom } from '../store/fileshare';
-import type { ChunkEvent, MetadataEvent, PeerId } from '../types/fileshare';
+import type { ChunkEvent, MetadataEvent, PeerId } from '../types';
 
 const SOCKET_HOST = 'localhost:4001';
 
@@ -26,7 +26,7 @@ export const useFileshareConnection = () => {
       nextSocket.emit('getPeers');
     });
 
-    nextSocket.on('getPeers', (ids: PeerId[]) => {
+    nextSocket.on('getPeers', (ids: Array<PeerId>) => {
       setPeers(ids);
     });
 

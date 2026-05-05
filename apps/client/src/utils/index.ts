@@ -1,10 +1,10 @@
-import type { ChunkEvent, FileTransfer, Metadata } from '../types/fileshare';
+import type { ChunkEvent, FileTransfer, Metadata } from '../types';
 
 export const CHUNK_SIZE = 10000;
 
 export const decodeMetadata = (id: string): Metadata => JSON.parse(atob(id)) as Metadata;
 
-export const chunkSubstr = (value: string, size: number): string[] => {
+export const chunkSubstr = (value: string, size: number): Array<string> => {
   const numChunks = Math.ceil(value.length / size);
   const chunks = new Array<string>(numChunks);
 
@@ -25,8 +25,7 @@ export const readFileAsDataUrl = (file: File) =>
 
 export const compareChunkIndex = (left: ChunkEvent, right: ChunkEvent) => Number(left.index) - Number(right.index);
 
-export const getLoadedSize = (file: FileTransfer) =>
-  file.chunks.reduce((total, chunk) => total + chunk.data.length, 0);
+export const getLoadedSize = (file: FileTransfer) => file.chunks.reduce((total, chunk) => total + chunk.data.length, 0);
 
 export const getTransferPercentage = (file: FileTransfer) => {
   if (file.metadata.size === 0) {

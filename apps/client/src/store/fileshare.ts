@@ -1,10 +1,10 @@
 import { atom } from 'jotai';
 import type { Socket } from 'socket.io-client';
 
-import { CHUNK_SIZE, chunkSubstr, decodeMetadata, readFileAsDataUrl } from '../lib/fileshare';
-import type { ChunkEvent, FileTransfer, Metadata, MetadataEvent, PeerId } from '../types/fileshare';
+import type { ChunkEvent, FileTransfer, Metadata, MetadataEvent, PeerId } from '../types';
+import { CHUNK_SIZE, chunkSubstr, decodeMetadata, readFileAsDataUrl } from '../utils';
 
-export const peersAtom = atom<PeerId[]>([]);
+export const peersAtom = atom<Array<PeerId>>([]);
 export const filesAtom = atom<Record<string, FileTransfer>>({});
 export const socketAtom = atom<Socket | null>(null);
 

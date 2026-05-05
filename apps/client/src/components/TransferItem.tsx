@@ -1,5 +1,5 @@
-import { getDownloadHref, getTransferPercentage } from '../lib/fileshare';
-import type { FileTransfer } from '../types/fileshare';
+import { getDownloadHref, getTransferPercentage } from '../utils';
+import type { FileTransfer } from '../types';
 
 type TransferItemProps = {
   file: FileTransfer;
@@ -10,10 +10,7 @@ export const TransferItem = ({ file }: TransferItemProps) => {
   const downloadHref = getDownloadHref(file);
 
   return (
-    <div
-      class={`item${file.chunks.length > 0 ? ' progress' : ''}`}
-      style={{ width: `${percentage}%` }}
-    >
+    <div class={`item${file.chunks.length > 0 ? ' progress' : ''}`} style={{ width: `${percentage}%` }}>
       <span class="file-name">{file.metadata.name}</span>
       <span class="file-progress">
         {percentage} / 100%
