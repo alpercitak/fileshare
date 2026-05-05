@@ -1,6 +1,7 @@
 #container {
   display: flex;
   height: 100%;
+  gap: 4px;
 
   #peers {
     width: 240px;
@@ -10,7 +11,6 @@
   #files {
     flex-grow: 1;
     border: 1px solid #eee;
-    margin-left: 4px;
     overflow: hidden;
   }
 
@@ -30,5 +30,18 @@
     &.progress {
       background-color: rgba(0, 255, 0, 0.6);
     }
+  }
+
+  .file-picker {
+    display: block;
+  }
+
+  .file-name {
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .file-progress {
+    display: block;
   }
 }
