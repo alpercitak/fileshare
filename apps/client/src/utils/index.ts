@@ -1,4 +1,5 @@
-import type { ChunkEvent, FileTransfer, Metadata } from '@/types';
+import type { ChunkEvent, Metadata } from '@fileshare/shared';
+import type { FileTransfer } from '@/types';
 
 export const CHUNK_SIZE = 10000;
 
