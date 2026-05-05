@@ -1,9 +1,12 @@
+import { getPort } from '@fileshare/shared';
 import { FileDrop } from '@/components/file-drop';
 import { RoomManager } from '@/components/room-manager';
 import { TransferList } from '@/components/transfer-list';
-import { SOCKET_HOST } from '@/constants';
 import { useWebRTC } from '@/hooks/useWebRTC';
 import styles from './index.module.css';
+
+const PORT = getPort();
+const SOCKET_HOST = `${window.location.hostname}:${PORT}`;
 
 export const Home = () => {
   const { status, roomCode, dataChannelOpen, inbound, outbound, error, actions } = useWebRTC(SOCKET_HOST);

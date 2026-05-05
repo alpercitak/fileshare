@@ -1,7 +1,8 @@
 import type { ServerWebSocket } from 'bun';
 import type { ClientMessage, PeerId, RoomCode, ServerMessage } from '@fileshare/shared';
+import { getPort } from '@fileshare/shared';
 
-const PORT = 4001;
+const PORT = getPort();
 const ROOM_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 type Peer = {

@@ -6,6 +6,7 @@ import type {
   DataChannelFileHeader,
   RoomCode,
 } from '@fileshare/shared';
+import { getPort } from '@fileshare/shared';
 import { STUN, CHUNK_SIZE, BUFFERED_AMOUNT_HIGH } from '@/constants';
 import type { WebRTCState, ConnectionStatus, InboundTransfer, OutboundTransfer } from '@/types';
 import { decodeFrame, encodeFrame, assembleFile } from '@/utils/binary';

@@ -2,13 +2,16 @@ name: "fileshare"
 
 services:
   fileshare-server:
-    image: fileshare-server
     build:
       context: ..
       dockerfile: docker/Dockerfile
       target: deploy-server
+      args:
+        - PORT=${PORT:-4001}
     ports:
-      - 4001:4001
+      - "${PORT:-4001}:${PORT:-4001}"
+    environment:
+      - PORT=${PORT:-4001}
   fileshare-client:
     image: fileshare-client
     build:

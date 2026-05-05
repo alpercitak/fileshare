@@ -25,12 +25,16 @@ RUN bun run --cwd apps/client build
 
 FROM oven/bun:1.3.8-alpine AS deploy-server
 
+ARG PORT=4001
+ENV PORT=${PORT}
+
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=build-server /app/apps/server ./apps/server
 COPY --from=build-server /app/packages/shared ./packages/shared
-EXPOSE 4001
+
+EXPOSE ${PORT}
 
 CMD ["bun", "apps/server/dist/index.js"]
 
