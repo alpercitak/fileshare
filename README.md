@@ -4,6 +4,8 @@
 
 `fileshare` is a high-performance, zero-knowledge file distribution utility. It demonstrates advanced orchestration of browser-native APIs to achieve secure, serverless data streaming with a focus on memory efficiency and cryptographic integrity.
 
+---
+
 ### Operational Overview
 
 *   **Runtime:** Optimized for **Bun** (Fastest JS all-in-one toolkit).
@@ -24,6 +26,18 @@
 | **Signaling** | WebSockets | Lightweight node discovery and session negotiation. |
 | **Security** | WebCrypto | Native AES-256-GCM encryption with chunk-level integrity. |
 
+---
+
+### Engineering Highlights
+
+*   **Asynchronous Backpressure Management**: Implements a manual flow-control loop using `bufferedAmount`. By monitoring the `RTCDataChannel` buffer and pausing the stream when it exceeds **16MB** (`BUFFERED_AMOUNT_HIGH`), the system prevents memory overflow and packet loss during high-speed transfers.
+*   **Zero-Knowledge Key Exchange**: Leverages **ECDH (P-256)** to derive a shared secret locally. The signaling server brokers the handshake but is cryptographically incapable of deriving the session key or viewing the file data.
+*   **Atomic Binary Framing**: Utilizes custom `encodeFrame` and `decodeFrame` utilities to handle binary chunk indexing. This ensures file integrity and proper reassembly even when dealing with massive binary streams.
+*   **Hardware-Accelerated Encryption**: Uses the native **WebCrypto API** for **AES-GCM 256-bit** encryption. This offloads cryptographic tasks to the browser's optimized background processes, ensuring the UI remains responsive at 60fps during transfers.
+*   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This allows the application to transfer multi-gigabyte files without exceeding the browser's heap limit or crashing the tab.
+
+---
+
 ### Security Architecture
 
 This system utilizes a **zero-knowledge** architecture. File data never touches a server; the WebSocket signaling layer only facilitates the initial metadata handshake.
@@ -39,7 +53,7 @@ This system utilizes a **zero-knowledge** architecture. File data never touches 
 
 ```bash
 git clone https://github.com/alpercitak/fileshare
-cd aphelion
+cd fileshare
 bun install
 bun run dev
 ```
