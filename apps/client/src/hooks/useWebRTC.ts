@@ -133,20 +133,20 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
           createPeerConnection(msg.payload.roomCode);
           break;
         case 'peerJoined': {
-          const pc = createPeerConnection(msg.payload.roomCode);
-          setupDataChannel(pc.createDataChannel('fileshare'));
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
+          const peerConnection = createPeerConnection(msg.payload.roomCode);
+          setupDataChannel(peerConnection.createDataChannel('fileshare'));
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
           sigSend({ type: 'sdpOffer', payload: { roomCode: msg.payload.roomCode, sdp: offer } });
           break;
         }
         case 'sdpOffer': {
-          const pc = createPeerConnection(msg.payload.roomCode);
-          await pc.setRemoteDescription(msg.payload.sdp);
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
+          const peerConnection = createPeerConnection(msg.payload.roomCode);
+          await peerConnection.setRemoteDescription(msg.payload.sdp);
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
           sigSend({ type: 'sdpAnswer', payload: { roomCode: msg.payload.roomCode, sdp: answer } });
-          pc.ondatachannel = ({ channel }) => setupDataChannel(channel);
+          peerConnection.ondatachannel = ({ channel }) => setupDataChannel(channel);
           break;
         }
         case 'sdpAnswer':
