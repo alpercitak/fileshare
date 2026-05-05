@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import type { Socket } from 'socket.io-client';
-import type { ChunkEvent, FileTransfer, Metadata, MetadataEvent, PeerId } from '../types';
-import { CHUNK_SIZE, chunkSubstr, decodeMetadata, readFileAsDataUrl } from '../utils';
+import type { ChunkEvent, FileTransfer, Metadata, MetadataEvent, PeerId } from '@/types';
+import { CHUNK_SIZE, chunkSubstr, decodeMetadata, readFileAsDataUrl } from '@/utils';
 
 export const peersAtom = atom<Array<PeerId>>([]);
 export const filesAtom = atom<Record<string, FileTransfer>>({});

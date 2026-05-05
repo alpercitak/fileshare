@@ -1,7 +1,7 @@
-import { FilePicker } from './components/FilePicker';
-import { PeerList } from './components/PeerList';
-import { TransferList } from './components/TransferList';
-import { useFileshareConnection } from './hooks/useFileshareConnection';
+import { FilePicker } from '@/components/FilePicker';
+import { PeerList } from '@/components/PeerList';
+import { TransferList } from '@/components/TransferList';
+import { useFileshareConnection } from '@/hooks/useFileshareConnection';
 import styles from './App.module.css';
 
 const App = () => {

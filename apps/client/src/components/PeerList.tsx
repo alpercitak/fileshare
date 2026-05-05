@@ -1,5 +1,5 @@
 import { useAtomValue } from 'jotai';
-import { peersAtom } from '../store/fileshare';
+import { peersAtom } from '@/store';
 import styles from './PeerList.module.css';
 
 export const PeerList = () => {

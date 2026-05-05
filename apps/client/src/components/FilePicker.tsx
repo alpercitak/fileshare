@@ -1,5 +1,5 @@
 import { useSetAtom } from 'jotai';
-import { sendFileAtom } from '../store/fileshare';
+import { sendFileAtom } from '@/store';
 import styles from './FilePicker.module.css';
 
 export const FilePicker = () => {

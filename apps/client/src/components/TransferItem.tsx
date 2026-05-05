@@ -1,5 +1,5 @@
-import { getDownloadHref, getTransferPercentage } from '../utils';
-import type { FileTransfer } from '../types';
+import type { FileTransfer } from '@/types';
+import { getDownloadHref, getTransferPercentage } from '@/utils';
 import styles from './TransferItem.module.css';
 
 type TransferItemProps = {

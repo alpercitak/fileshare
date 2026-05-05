@@ -1,5 +1,5 @@
 import { useAtomValue } from 'jotai';
-import { filesAtom } from '../store/fileshare';
+import { filesAtom } from '../store';
 import { TransferItem } from './TransferItem';
 
 export const TransferList = () => {
