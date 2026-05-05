@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .accent-stroke {
+        fill: none;
+        stroke: #4ade80;
+        stroke-width: 2px;
+        stroke-linecap: square;
+        stroke-linejoin: miter;
+      }
+      .accent-fill {
+        fill: #4ade80;
+      }
+      .data-line {
+        stroke: #4ade80;
+        stroke-width: 1px;
+        stroke-dasharray: 2 1;
+        opacity: 0.4;
+      }
+    </style>
+  </defs>
+
+  <!-- Central Asymmetric Flow (Yin-Yang Spirit) -->
+  <!-- Upper Path: Upload -->
+  <path class="accent-stroke" d="M16 16 C 16 10, 22 8, 26 8" />
+  <path class="accent-fill" d="M25 5 L30 8 L25 11 Z" /> <!-- Right-pointing Arrow -->
+  
+  <!-- Lower Path: Download -->
+  <path class="accent-stroke" d="M16 16 C 16 22, 10 24, 6 24" />
+  <path class="accent-fill" d="M7 21 L2 24 L7 27 Z" /> <!-- Left-pointing Arrow -->
+
+  <!-- Industrial Tech Framing -->
+  <path class="accent-stroke" d="M2 10 V2 H10" /> <!-- Top Left Bracket -->
+  <path class="accent-stroke" d="M30 22 V30 H22" /> <!-- Bottom Right Bracket -->
+  
+  <!-- Connection Nodes -->
+  <rect class="accent-fill" x="15" y="15" width="2" height="2" /> <!-- Central Node -->
+  <rect class="accent-fill" x="28" y="7" width="2" height="2" opacity="0.5" />
+  <rect class="accent-fill" x="2" y="23" width="2" height="2" opacity="0.5" />
+</svg>
