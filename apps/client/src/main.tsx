@@ -1,7 +1,5 @@
 import { render } from 'preact';
-import { Home } from '@/pages/Home';
-import '@/styles/global.css';
+import { Home } from './pages/home';
+import './styles/global.css';
 
-const elem = document.getElementById('root')!;
-
-render(<Home />, elem);
+render(<Home />, document.getElementById('root')!);

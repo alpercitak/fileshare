@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@fileshare/shared": "workspace:*",
+    "clsx": "^2.1.1",
     "jotai": "^2.19.1",
     "preact": "^10.29.1",
     "vite": "^8.0.10"

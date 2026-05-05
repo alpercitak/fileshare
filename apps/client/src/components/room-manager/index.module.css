@@ -1,0 +1,16 @@
+.room-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.room-manager__input-container {
+  display: flex;
+  gap: 8px;
+}
+.room-manager__input {
+  flex: 1;
+}
+.room-manager__status {
+  color: #888;
+  margin-top: 8px;
+}

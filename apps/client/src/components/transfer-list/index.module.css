@@ -1,0 +1,9 @@
+.transfer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transfer-list__progress {
+  width: 100%;
+}

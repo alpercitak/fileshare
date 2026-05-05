@@ -1,0 +1,10 @@
+.home {
+  font-family: 'monospace';
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px;
+}
+.home_error {
+  color: red;
+  margin-bottom: 8px;
+}
