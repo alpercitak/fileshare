@@ -1,9 +1,10 @@
 # Fileshare
 
-![Build](https://img.shields.io/github/actions/workflow/status/alpercitak/fileshare/build.yaml?branch=main&label=Build&color=4ade80&style=flat-square)
-![Security](https://img.shields.io/badge/Security-E2EE%20Safe-4ade80?style=flat-square)
-![Bun](https://img.shields.io/badge/Bun-black?style=flat-square&logo=bun&logoColor=fbf0df)
-![License](https://img.shields.io/badge/License-MIT-4ade80?style=flat-square)
+![WebRTC](https://img.shields.io/badge/WebRTC-000000?style=flat-square&logo=webrtc&logoColor=white)
+![WebCrypto](https://img.shields.io/badge/WebCrypto-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![Security](https://img.shields.io/badge/E2EE_Safe-2ea44f?style=flat-square)
+![Build](https://img.shields.io/github/actions/workflow/status/alpercitak/fileshare/build.yaml?style=flat-square&label=&color=2ea44f)
+![License](https://img.shields.io/badge/MIT-2ea44f?style=flat-square)
 
 **Direct browser-to-browser payloads via WebRTC. Hardened with AES-GCM 256 & ECDH.**
 
