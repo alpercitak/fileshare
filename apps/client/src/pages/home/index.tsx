@@ -11,7 +11,6 @@ export const Home = () => {
   return (
     <div className={styles['home']}>
       <h1>fileshare</h1>
-      {error && <div className={styles['home_error']}>{error}</div>}
       <RoomManager status={status} roomCode={roomCode} onCreate={actions.createRoom} onJoin={actions.joinRoom} />
       {(status === 'connected' || dataChannelOpen) && (
         <>
@@ -19,6 +18,7 @@ export const Home = () => {
           <TransferList inbound={inbound} outbound={outbound} />
         </>
       )}
+      {error && <div className={styles['home__error']}>{error}</div>}
     </div>
   );
 };
