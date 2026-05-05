@@ -1,3 +1,24 @@
+:root {
+  --color-accent: #4ade80;
+  --color-accent-hover: #22c55e;
+  --color-accent-soft: rgba(74, 222, 128, 0.08);
+
+  --bg-main: #0b0f0d;
+  --bg-subtle: #141a17;
+  --text-main: #d1d5db;
+  --text-muted: #6b7280;
+  --border-light: #1f2925;
+
+  --status-success: var(--color-accent);
+  --status-error: #f87171;
+
+  --btn-bg: transparent;
+  --btn-text: var(--color-accent);
+  --btn-border: var(--color-accent);
+  --btn-hover-bg: var(--color-accent-hover);
+  --btn-hover-text: var(--bg-main);
+}
+
 html,
 body,
 #app {
@@ -6,5 +27,8 @@ body,
 
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: 'JetBrains Mono', monospace;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  overflow: hidden;
 }

@@ -1,10 +1,33 @@
 .home {
-  font-family: 'monospace';
+  font-family: var(--font-main);
   max-width: 600px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 48px 32px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.home h1 {
+  font-size: 1.2rem;
+  text-transform: lowercase;
+  color: var(--color-accent);
+  width: fit-content;
+  padding-right: 8px;
 }
 .home_error {
-  color: red;
-  margin-bottom: 8px;
+  color: var(--status-error);
+  background-color: rgba(248, 113, 113, 0.05);
+  border: 1px solid var(--status-error);
+  padding: 12px;
+  font-size: 13px;
+  border-radius: 2px;
+  display: flex;
+  align-items: flex-start;
+}
+.home_error::before {
+  content: 'ERROR: ';
+  font-weight: bold;
+  margin-right: 8px;
+  white-space: nowrap;
 }

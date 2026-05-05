@@ -9,7 +9,7 @@ export const TransferList = ({ inbound, outbound }: Props) => {
   return (
     <div className={styles['transfer-list']}>
       {Object.values(outbound).map((transfer) => (
-        <div key={transfer.transferId}>
+        <div key={transfer.transferId} className={styles['transfer-list__item']}>
           <div>{transfer.name} (Sending)</div>
           <progress
             value={transfer.sentChunks}
@@ -19,7 +19,7 @@ export const TransferList = ({ inbound, outbound }: Props) => {
         </div>
       ))}
       {Object.values(inbound).map((transfer) => (
-        <div key={transfer.transferId}>
+        <div key={transfer.transferId} className={styles['transfer-list__item']}>
           <div>{transfer.header.name} (Receiving)</div>
           <progress
             value={transfer.chunks.filter(Boolean).length}

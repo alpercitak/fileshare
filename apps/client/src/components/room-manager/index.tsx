@@ -1,8 +1,10 @@
 import { useState } from 'preact/hooks';
+import { Button } from '@/components/button';
+import { ConnectionStatus } from '@/types';
 import styles from './index.module.css';
 
 interface Props {
-  status: string;
+  status: ConnectionStatus;
   roomCode: string | null;
   onCreate: () => void;
   onJoin: (code: string) => void;
@@ -14,7 +16,7 @@ export const RoomManager = ({ status, roomCode, onCreate, onJoin }: Props) => {
   if (status === 'idle') {
     return (
       <div className={styles['room-manager']}>
-        <button onClick={onCreate}>create room</button>
+        <Button onClick={onCreate}>create room</Button>
         <div className={styles['room-manager__input-container']}>
           <input
             className={styles['room-manager__input']}
@@ -22,7 +24,7 @@ export const RoomManager = ({ status, roomCode, onCreate, onJoin }: Props) => {
             value={input}
             onInput={(e) => setInput(e.currentTarget.value.toUpperCase())}
           />
-          <button onClick={() => onJoin(input)}>join</button>
+          <Button onClick={() => onJoin(input)}>join</Button>
         </div>
       </div>
     );

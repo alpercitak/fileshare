@@ -1,15 +1,29 @@
 .file-drop__status {
   margin-left: 12px;
-  color: #888;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
 }
 .file-drop__status--connected {
-  color: green;
+  color: var(--color-accent);
+  text-shadow: 0 0 4px var(--color-accent-soft);
 }
 .file-drop__file-drop-area {
-  border: 2px dashed #ccc;
+  border: 1px dashed var(--border-light);
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
   padding: 40px;
   text-align: center;
   margin-bottom: 24px;
-  cursor: pointer;
   margin-top: 8px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease-in-out;
+}
+.file-drop__file-drop-area:hover {
+  border: 1px solid var(--color-accent);
+  background-color: rgba(74, 222, 128, 0.02);
+  color: var(--text-main);
+  outline: 1px solid var(--color-accent-soft);
 }
