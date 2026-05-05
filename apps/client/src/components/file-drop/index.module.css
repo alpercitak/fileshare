@@ -1,0 +1,15 @@
+.file-drop__status {
+  margin-left: 12px;
+  color: #888;
+}
+.file-drop__status--connected {
+  color: green;
+}
+.file-drop__file-drop-area {
+  border: 2px dashed #ccc;
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 24px;
+  cursor: pointer;
+  margin-top: 8px;
+}
