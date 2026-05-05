@@ -1,6 +1,5 @@
 import { atom } from 'jotai';
 import type { Socket } from 'socket.io-client';
-
 import type { ChunkEvent, FileTransfer, Metadata, MetadataEvent, PeerId } from '../types';
 import { CHUNK_SIZE, chunkSubstr, decodeMetadata, readFileAsDataUrl } from '../utils';
 
@@ -12,7 +11,7 @@ export const setSocketAtom = atom(null, (_get, set, socket: Socket | null) => {
   set(socketAtom, socket);
 });
 
-export const setPeersAtom = atom(null, (_get, set, peers: PeerId[]) => {
+export const setPeersAtom = atom(null, (_get, set, peers: Array<PeerId>) => {
   set(peersAtom, peers);
 });
 

@@ -1,0 +1,12 @@
+.root {
+  border: 1px solid #eee;
+  width: 240px;
+}
+
+.item {
+  border-bottom: 1px solid #eee;
+  font-size: 12px;
+  height: 24px;
+  margin: 2px;
+  padding: 8px;
+}

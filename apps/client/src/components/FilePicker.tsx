@@ -1,6 +1,6 @@
 import { useSetAtom } from 'jotai';
-
 import { sendFileAtom } from '../store/fileshare';
+import styles from './FilePicker.module.css';
 
 export const FilePicker = () => {
   const sendFile = useSetAtom(sendFileAtom);
@@ -18,8 +18,8 @@ export const FilePicker = () => {
   };
 
   return (
-    <div class="item">
-      <input class="file-picker" type="file" onChange={handleFileChange} />
+    <div className={styles.root}>
+      <input className={styles.input} type="file" onChange={handleFileChange} />
     </div>
   );
 };

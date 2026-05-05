@@ -1,9 +1,8 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'preact/hooks';
 import { io } from 'socket.io-client';
-
-import { receiveChunkAtom, receiveMetadataAtom, setPeersAtom, setSocketAtom, socketAtom } from '../store/fileshare';
 import type { ChunkEvent, MetadataEvent, PeerId } from '../types';
+import { receiveChunkAtom, receiveMetadataAtom, setPeersAtom, setSocketAtom, socketAtom } from '../store/fileshare';
 
 const SOCKET_HOST = 'localhost:4001';
 

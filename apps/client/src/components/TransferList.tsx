@@ -1,5 +1,4 @@
 import { useAtomValue } from 'jotai';
-
 import { filesAtom } from '../store/fileshare';
 import { TransferItem } from './TransferItem';
 
