@@ -1,16 +1,16 @@
 import { useState } from 'preact/hooks';
 import { Button } from '@/components/button';
-import { ConnectionStatus } from '@/types';
+import type { ConnectionStatus } from '@/types';
 import styles from './index.module.css';
 
-interface Props {
+interface RoomManagerProps {
   status: ConnectionStatus;
   roomCode: string | null;
   onCreate: () => void;
   onJoin: (code: string) => void;
 }
 
-export const RoomManager = ({ status, roomCode, onCreate, onJoin }: Props) => {
+export const RoomManager = ({ status, roomCode, onCreate, onJoin }: RoomManagerProps) => {
   const [input, setInput] = useState('');
 
   if (status === 'idle') {

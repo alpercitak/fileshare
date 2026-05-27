@@ -1,7 +1,7 @@
 import type { InboundTransfer, OutboundTransfer } from '@/types';
 import styles from './index.module.css';
 
-interface Props {
+interface TransferListProps {
   inbound: Record<string, InboundTransfer>;
   outbound: Record<string, OutboundTransfer>;
 }
@@ -43,15 +43,13 @@ const OutboundTransferItem = ({ transfer }: { transfer: OutboundTransfer }) => {
   );
 };
 
-export const TransferList = ({ inbound, outbound }: Props) => {
-  return (
-    <div className={styles['transfer-list']}>
-      {Object.values(outbound).map((transfer) => (
-        <OutboundTransferItem key={transfer.transferId} transfer={transfer} />
-      ))}
-      {Object.values(inbound).map((transfer) => (
-        <InboundTransferItem key={transfer.transferId} transfer={transfer} />
-      ))}
-    </div>
-  );
-};
+export const TransferList = ({ inbound, outbound }: TransferListProps) => (
+  <div className={styles['transfer-list']}>
+    {Object.values(outbound).map((transfer) => (
+      <OutboundTransferItem key={transfer.transferId} transfer={transfer} />
+    ))}
+    {Object.values(inbound).map((transfer) => (
+      <InboundTransferItem key={transfer.transferId} transfer={transfer} />
+    ))}
+  </div>
+);

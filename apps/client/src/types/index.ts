@@ -6,6 +6,7 @@ interface Transfer {
   transferId: string;
   done: boolean;
 }
+
 export interface InboundTransfer extends Transfer {
   header: DataChannelFileHeader;
   chunks: Array<ArrayBuffer>;

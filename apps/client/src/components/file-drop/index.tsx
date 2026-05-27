@@ -1,12 +1,13 @@
 import { clsx } from 'clsx';
 import styles from './index.module.css';
-interface Props {
-  onFiles: (files: File[]) => void;
+
+interface FileDropProps {
+  onFiles: (files: Array<File>) => void;
   roomCode: string | null;
   isOpen: boolean;
 }
 
-export const FileDrop = ({ onFiles, roomCode, isOpen }: Props) => {
+export const FileDrop = ({ onFiles, roomCode, isOpen }: FileDropProps) => {
   const handlePick = () => {
     const input = document.createElement('input');
     input.type = 'file';

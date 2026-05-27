@@ -20,8 +20,6 @@ type Room = {
 const peers = new Map<ServerWebSocket, Peer>();
 const rooms = new Map<RoomCode, Room>();
 
-// ── helpers ─────────────────────────────────────────────────
-
 const send = (socket: ServerWebSocket, message: ServerMessage) => {
   socket.send(JSON.stringify(message));
 };
