@@ -28,8 +28,7 @@ jobs:
       - run: bun install
 
       - run: bunx biome ci .
-      - run: bunx tsc --noEmit -p apps/client
-      - run: bunx tsc --noEmit -p apps/server
+      - run: bun run typecheck
 
       - uses: alpercitak/fasttrack@v0.2.2
         with:
