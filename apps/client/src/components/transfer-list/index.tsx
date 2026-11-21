@@ -7,7 +7,7 @@ interface TransferListProps {
 }
 
 const InboundTransferItem = ({ transfer }: { transfer: InboundTransfer }) => {
-  const statusText = transfer.chunks.filter(Boolean).length === transfer.header.totalChunks ? 'Received' : 'Receiving';
+  const statusText = transfer.done ? 'Received' : 'Receiving';
   return (
     <div key={transfer.transferId} className={styles['transfer-list__item']}>
       <div className={styles['transfer-list__item-header']}>
@@ -22,7 +22,7 @@ const InboundTransferItem = ({ transfer }: { transfer: InboundTransfer }) => {
         )}
       </div>
       <progress
-        value={transfer.chunks.filter(Boolean).length}
+        value={transfer.receivedChunks}
         max={transfer.header.totalChunks}
         className={styles['transfer-list__progress']}
       />
@@ -31,7 +31,7 @@ const InboundTransferItem = ({ transfer }: { transfer: InboundTransfer }) => {
 };
 
 const OutboundTransferItem = ({ transfer }: { transfer: OutboundTransfer }) => {
-  const statusText = transfer.sentChunks === transfer.totalChunks ? 'Sent' : 'Sending';
+  const statusText = transfer.done ? 'Sent' : 'Sending';
   return (
     <div key={transfer.transferId} className={styles['transfer-list__item']}>
       <div>

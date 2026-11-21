@@ -9,7 +9,7 @@ interface Transfer {
 
 export interface InboundTransfer extends Transfer {
   header: DataChannelFileHeader;
-  chunks: Array<ArrayBuffer>;
+  receivedChunks: number;
   url: string | null;
 }
 

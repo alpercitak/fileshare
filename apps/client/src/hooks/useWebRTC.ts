@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import type {
   ClientMessage,
-  ServerMessage,
-  DataChannelMessage,
   DataChannelFileHeader,
+  DataChannelMessage,
   RoomCode,
+  ServerMessage,
 } from '@fileshare/shared';
-import { STUN, CHUNK_SIZE, BUFFERED_AMOUNT_HIGH } from '@/constants';
-import type { WebRTCState, ConnectionStatus, InboundTransfer, OutboundTransfer } from '@/types';
-import { decodeFrame, encodeFrame, assembleFile } from '@/utils/binary';
-import { generateKeyPair, deriveSharedKey, encryptChunk, decryptChunk } from '@/utils/crypto';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { BUFFERED_AMOUNT_HIGH, BUFFERED_AMOUNT_LOW, CHUNK_SIZE, STUN } from '@/constants';
+import type { ConnectionStatus, InboundTransfer, OutboundTransfer, WebRTCState } from '@/types';
+import { assembleFile, decodeFrame, encodeFrame } from '@/utils/binary';
+import { decryptChunk, deriveSharedKey, encryptChunk, generateKeyPair } from '@/utils/crypto';
 
 export const useWebRTC = (socketHost: string): WebRTCState => {
   const [status, setStatus] = useState<ConnectionStatus>('idle');
@@ -23,9 +23,10 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
   const socketRef = useRef<WebSocket | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
-  const keyPairRef = useRef<CryptoKeyPair | null>(null);
-  const sharedKeyRef = useRef<CryptoKey | null>(null);
+  const sharedKeyRef = useRef<Promise<CryptoKey> | null>(null);
   const activeHeaderRef = useRef<DataChannelFileHeader | null>(null);
+  const inboundChunksRef = useRef<Record<string, { chunks: Array<ArrayBuffer>; received: number }>>({});
+  const sendQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const sigSend = useCallback((message: ClientMessage) => {
     socketRef.current?.send(JSON.stringify(message));
@@ -34,12 +35,20 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
   const setupDataChannel = useCallback((dataChannel: RTCDataChannel) => {
     dataChannelRef.current = dataChannel;
     dataChannel.binaryType = 'arraybuffer';
+    dataChannel.bufferedAmountLowThreshold = BUFFERED_AMOUNT_LOW;
+    const keyPair = generateKeyPair();
+    let resolvePeerKey: (jwk: JsonWebKey) => void;
+    const peerKey = new Promise<JsonWebKey>((resolve) => {
+      resolvePeerKey = resolve;
+    });
+    sharedKeyRef.current = Promise.all([keyPair, peerKey]).then(([{ privateKey }, jwk]) =>
+      deriveSharedKey(privateKey, jwk),
+    );
 
     dataChannel.onopen = async () => {
       setDataChannelOpen(true);
-      const keyPair = await generateKeyPair();
-      keyPairRef.current = keyPair;
-      const pubJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+      const { publicKey } = await keyPair;
+      const pubJwk = await crypto.subtle.exportKey('jwk', publicKey);
       dataChannel.send(JSON.stringify({ type: 'handshake', publicKey: pubJwk }));
     };
 
@@ -49,49 +58,49 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
       if (event.data instanceof ArrayBuffer) {
         const { index, data } = decodeFrame(event.data);
         const header = activeHeaderRef.current;
-        if (!header || !sharedKeyRef.current) {
+        if (!header) {
           return;
         }
+        const key = await sharedKeyRef.current;
+        if (!key) {
+          return;
+        }
+        const decrypted = await decryptChunk(key, data);
 
-        const decrypted = await decryptChunk(sharedKeyRef.current, data);
-
-        setInbound((prev) => {
-          const current = prev[header.transferId];
-          if (!current) {
-            return prev;
-          }
-          const newChunks = [...current.chunks];
-          newChunks[index] = decrypted;
-          const received = newChunks.filter(Boolean).length;
-          const done = received === header.totalChunks;
-          return {
+        const entry = inboundChunksRef.current[header.transferId];
+        entry.chunks[index] = decrypted;
+        entry.received++;
+        const progressStep = Math.ceil(header.totalChunks / 100);
+        if (entry.received === header.totalChunks) {
+          const url = URL.createObjectURL(assembleFile(header, entry.chunks));
+          delete inboundChunksRef.current[header.transferId];
+          setInbound((prev) => ({
             ...prev,
-            [header.transferId]: {
-              ...current,
-              chunks: newChunks,
-              done,
-              url: done ? URL.createObjectURL(assembleFile(header, newChunks)) : null,
-            },
-          };
-        });
+            [header.transferId]: { ...prev[header.transferId], receivedChunks: entry.received, done: true, url },
+          }));
+        } else if (entry.received % progressStep === 0) {
+          setInbound((prev) => ({
+            ...prev,
+            [header.transferId]: { ...prev[header.transferId], receivedChunks: entry.received },
+          }));
+        }
         return;
       }
 
       const msg = JSON.parse(event.data) as DataChannelMessage;
       switch (msg.type) {
         case 'handshake':
-          if (keyPairRef.current) {
-            sharedKeyRef.current = await deriveSharedKey(keyPairRef.current.privateKey, msg.publicKey);
-          }
+          resolvePeerKey(msg.publicKey);
           break;
         case 'fileHeader':
           activeHeaderRef.current = msg;
+          inboundChunksRef.current[msg.transferId] = { chunks: new Array(msg.totalChunks), received: 0 };
           setInbound((prev) => ({
             ...prev,
             [msg.transferId]: {
               transferId: msg.transferId,
               header: msg,
-              chunks: new Array(msg.totalChunks),
+              receivedChunks: 0,
               done: false,
               url: null,
             },
@@ -170,43 +179,53 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
     return () => ws.close();
   }, [handleSignaling, socketHost]);
 
-  const sendFile = useCallback(async (file: File) => {
-    const dataChannel = dataChannelRef.current;
-    const key = sharedKeyRef.current;
-    if (!dataChannel || !key || dataChannel.readyState !== 'open') {
-      return;
-    }
-
-    const transferId = crypto.randomUUID();
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-
-    dataChannel.send(
-      JSON.stringify({
-        type: 'fileHeader',
-        transferId,
-        name: file.name,
-        totalChunks,
-        size: file.size,
-        mimeType: file.type,
-        chunkSize: CHUNK_SIZE,
-      }),
-    );
-
-    setOutbound((prev) => ({
-      ...prev,
-      [transferId]: { transferId, name: file.name, totalChunks, sentChunks: 0, done: false },
-    }));
-
-    for (let i = 0; i < totalChunks; i++) {
-      while (dataChannel.bufferedAmount > BUFFERED_AMOUNT_HIGH) {
-        await new Promise((r) => setTimeout(r, 20));
+  const sendFile = useCallback((file: File) => {
+    const next = sendQueueRef.current.then(async () => {
+      const key = await sharedKeyRef.current;
+      const dataChannel = dataChannelRef.current;
+      if (!key || dataChannel?.readyState !== 'open') {
+        return;
       }
-      const slice = await file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE).arrayBuffer();
-      const encrypted = await encryptChunk(key, slice);
-      dataChannel.send(encodeFrame(i, encrypted));
-      setOutbound((prev) => ({ ...prev, [transferId]: { ...prev[transferId], sentChunks: i + 1 } }));
-    }
-    setOutbound((prev) => ({ ...prev, [transferId]: { ...prev[transferId], done: true } }));
+
+      const transferId = crypto.randomUUID();
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const progressStep = Math.ceil(totalChunks / 100);
+
+      dataChannel.send(
+        JSON.stringify({
+          type: 'fileHeader',
+          transferId,
+          name: file.name,
+          totalChunks,
+          size: file.size,
+          mimeType: file.type,
+          chunkSize: CHUNK_SIZE,
+        }),
+      );
+
+      setOutbound((prev) => ({
+        ...prev,
+        [transferId]: { transferId, name: file.name, totalChunks, sentChunks: 0, done: false },
+      }));
+
+      for (let i = 0; i < totalChunks; i++) {
+        if (dataChannel.bufferedAmount > BUFFERED_AMOUNT_HIGH) {
+          await new Promise((resolve) => dataChannel.addEventListener('bufferedamountlow', resolve, { once: true }));
+        }
+        const slice = await file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE).arrayBuffer();
+        const encrypted = await encryptChunk(key, slice);
+        dataChannel.send(encodeFrame(i, encrypted));
+        if ((i + 1) % progressStep === 0) {
+          setOutbound((prev) => ({ ...prev, [transferId]: { ...prev[transferId], sentChunks: i + 1 } }));
+        }
+      }
+      setOutbound((prev) => ({
+        ...prev,
+        [transferId]: { ...prev[transferId], sentChunks: totalChunks, done: true },
+      }));
+    });
+    sendQueueRef.current = next.catch(() => {}); // keep the queue alive; the error still reaches the caller via `next`
+    return next;
   }, []);
 
   return {
