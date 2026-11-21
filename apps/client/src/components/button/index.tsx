@@ -1,7 +1,7 @@
-import type { HTMLAttributes } from 'preact/compat';
+import type { ButtonHTMLAttributes } from 'preact';
 import styles from './index.module.css';
 
-export const Button = ({ children, ...rest }: HTMLAttributes<HTMLButtonElement>) => (
+export const Button = ({ children, ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) => (
   <button className={styles['button']} {...rest}>
     {children}
   </button>
