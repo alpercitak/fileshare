@@ -6,7 +6,8 @@
       "persistent": true
     },
     "test": {
-      "cache": false
+      "cache": false,
+      "dependsOn": ["^build"]
     },
     "build": {
       "outputs": ["dist/**"],
