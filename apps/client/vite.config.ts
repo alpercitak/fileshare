@@ -13,4 +13,12 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/ws': {
+        target: `ws://localhost:${process.env.PORT ?? 4001}`,
+        ws: true,
+      },
+    },
+  },
 });

@@ -1,16 +1,14 @@
-import { getPort } from '@fileshare/shared';
 import { FileDrop } from '@/components/file-drop';
 import { RoomManager } from '@/components/room-manager';
 import { TransferList } from '@/components/transfer-list';
 import { useWebRTC } from '@/hooks/useWebRTC';
 import styles from './index.module.css';
 
-const PORT = getPort();
-const SOCKET_HOST = `${window.location.hostname}:${PORT}`;
+const SOCKET_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`;
 
 export const Home = () => {
   const { status, roomCode, dataChannelOpen, verificationCode, inbound, outbound, error, actions } =
-    useWebRTC(SOCKET_HOST);
+    useWebRTC(SOCKET_URL);
   const hasTransfers = Object.keys(inbound).length > 0 || Object.keys(outbound).length > 0;
 
   return (

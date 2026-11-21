@@ -6,10 +6,5 @@ export const getPort = (): number => {
     return Number(env.PORT);
   }
 
-  const vitePort = import.meta.env?.VITE_PORT;
-  if (vitePort) {
-    return Number(vitePort);
-  }
-
   return DEFAULT_PORT;
 };
