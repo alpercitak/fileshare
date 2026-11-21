@@ -10,7 +10,7 @@
     "@fileshare/shared": "workspace:*",
     "clsx": "^2.1.1",
     "preact": "^10.29.1",
-    "vite": "^8.0.10"
+    "vite": "^8.3.8"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
