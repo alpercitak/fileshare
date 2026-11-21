@@ -1,15 +1,7 @@
-.file-drop__status {
-  margin-left: 12px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-}
-.file-drop__status--connected {
-  color: var(--color-accent);
-  text-shadow: 0 0 4px var(--color-accent-soft);
-}
 .file-drop__file-drop-area {
+  font: inherit;
+  box-sizing: border-box;
+  width: 100%;
   border: 1px dashed var(--border-light);
   background-color: var(--bg-subtle);
   color: var(--text-muted);

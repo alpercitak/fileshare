@@ -9,12 +9,13 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { BUFFERED_AMOUNT_HIGH, BUFFERED_AMOUNT_LOW, CHUNK_SIZE, STUN } from '@/constants';
 import type { ConnectionStatus, InboundTransfer, OutboundTransfer, WebRTCState } from '@/types';
 import { assembleFile, decodeFrame, encodeFrame } from '@/utils/binary';
-import { decryptChunk, deriveSharedKey, encryptChunk, generateKeyPair } from '@/utils/crypto';
+import { decryptChunk, deriveSharedKey, encryptChunk, generateKeyPair, getVerificationCode } from '@/utils/crypto';
 
 export const useWebRTC = (socketHost: string): WebRTCState => {
   const [status, setStatus] = useState<ConnectionStatus>('idle');
   const [roomCode, setRoomCode] = useState<RoomCode | null>(null);
   const [dataChannelOpen, setDataChannelOpen] = useState(false);
+  const [verificationCode, setVerificationCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [inbound, setInbound] = useState<Record<string, InboundTransfer>>({});
@@ -37,6 +38,7 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
     dataChannel.binaryType = 'arraybuffer';
     dataChannel.bufferedAmountLowThreshold = BUFFERED_AMOUNT_LOW;
     const keyPair = generateKeyPair();
+    const ownJwk = keyPair.then(({ publicKey }) => crypto.subtle.exportKey('jwk', publicKey));
     let resolvePeerKey: (jwk: JsonWebKey) => void;
     const peerKey = new Promise<JsonWebKey>((resolve) => {
       resolvePeerKey = resolve;
@@ -44,12 +46,13 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
     sharedKeyRef.current = Promise.all([keyPair, peerKey]).then(([{ privateKey }, jwk]) =>
       deriveSharedKey(privateKey, jwk),
     );
+    Promise.all([ownJwk, peerKey])
+      .then(([own, peer]) => getVerificationCode(own, peer))
+      .then(setVerificationCode);
 
     dataChannel.onopen = async () => {
       setDataChannelOpen(true);
-      const { publicKey } = await keyPair;
-      const pubJwk = await crypto.subtle.exportKey('jwk', publicKey);
-      dataChannel.send(JSON.stringify({ type: 'handshake', publicKey: pubJwk }));
+      dataChannel.send(JSON.stringify({ type: 'handshake', publicKey: await ownJwk }));
     };
 
     dataChannel.onclose = () => setDataChannelOpen(false);
@@ -93,6 +96,19 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
           resolvePeerKey(msg.publicKey);
           break;
         case 'fileHeader':
+          if (msg.totalChunks === 0) {
+            setInbound((prev) => ({
+              ...prev,
+              [msg.transferId]: {
+                transferId: msg.transferId,
+                header: msg,
+                receivedChunks: 0,
+                done: true,
+                url: URL.createObjectURL(assembleFile(msg, [])),
+              },
+            }));
+            break;
+          }
           activeHeaderRef.current = msg;
           inboundChunksRef.current[msg.transferId] = { chunks: new Array(msg.totalChunks), received: 0 };
           setInbound((prev) => ({
@@ -164,6 +180,21 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
         case 'iceCandidate':
           await peerConnectionRef.current?.addIceCandidate(msg.payload.candidate);
           break;
+        case 'peerLeft':
+          dataChannelRef.current?.close();
+          peerConnectionRef.current?.close();
+          dataChannelRef.current = null;
+          peerConnectionRef.current = null;
+          sharedKeyRef.current = null;
+          activeHeaderRef.current = null;
+          inboundChunksRef.current = {};
+          sendQueueRef.current = Promise.resolve();
+          setDataChannelOpen(false);
+          setStatus('idle');
+          setRoomCode(null);
+          setVerificationCode(null);
+          setError('Peer left the room');
+          break;
         case 'error':
           setError(msg.payload.message);
           break;
@@ -173,7 +204,7 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
   );
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://${socketHost}`);
+    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${socketHost}`);
     socketRef.current = ws;
     ws.onmessage = (e) => handleSignaling(JSON.parse(e.data));
     return () => ws.close();
@@ -210,7 +241,15 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
 
       for (let i = 0; i < totalChunks; i++) {
         if (dataChannel.bufferedAmount > BUFFERED_AMOUNT_HIGH) {
-          await new Promise((resolve) => dataChannel.addEventListener('bufferedamountlow', resolve, { once: true }));
+          await new Promise<void>((resolve) => {
+            const done = () => {
+              dataChannel.removeEventListener('bufferedamountlow', done);
+              dataChannel.removeEventListener('close', done);
+              resolve();
+            };
+            dataChannel.addEventListener('bufferedamountlow', done);
+            dataChannel.addEventListener('close', done);
+          });
         }
         const slice = await file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE).arrayBuffer();
         const encrypted = await encryptChunk(key, slice);
@@ -234,6 +273,7 @@ export const useWebRTC = (socketHost: string): WebRTCState => {
     dataChannelOpen,
     inbound,
     outbound,
+    verificationCode,
     error,
     actions: {
       createRoom: () => sigSend({ type: 'createRoom' }),

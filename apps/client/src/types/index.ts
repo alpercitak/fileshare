@@ -23,6 +23,7 @@ export interface WebRTCState {
   status: ConnectionStatus;
   roomCode: RoomCode | null;
   dataChannelOpen: boolean;
+  verificationCode: string | null;
   inbound: Record<string, InboundTransfer>;
   outbound: Record<string, OutboundTransfer>;
   error: string | null;

@@ -37,3 +37,10 @@ export const decryptChunk = async (key: CryptoKey, data: ArrayBuffer): Promise<A
   const ciphertext = data.slice(IV_LENGTH);
   return crypto.subtle.decrypt(getEncryptionAlgorithm(iv), key, ciphertext);
 };
+
+export const getVerificationCode = async (a: JsonWebKey, b: JsonWebKey): Promise<string> => {
+  const [first, second] = [`${a.x}${a.y}`, `${b.x}${b.y}`].sort();
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(first + second));
+  const hex = Array.from(new Uint8Array(digest, 0, 16), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return hex.match(/.{4}/g)?.join(' ') ?? hex;
+};

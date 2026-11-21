@@ -9,18 +9,22 @@ const PORT = getPort();
 const SOCKET_HOST = `${window.location.hostname}:${PORT}`;
 
 export const Home = () => {
-  const { status, roomCode, dataChannelOpen, inbound, outbound, error, actions } = useWebRTC(SOCKET_HOST);
+  const { status, roomCode, dataChannelOpen, verificationCode, inbound, outbound, error, actions } =
+    useWebRTC(SOCKET_HOST);
+  const hasTransfers = Object.keys(inbound).length > 0 || Object.keys(outbound).length > 0;
 
   return (
     <div className={styles['home']}>
       <h1>fileshare</h1>
       <RoomManager status={status} roomCode={roomCode} onCreate={actions.createRoom} onJoin={actions.joinRoom} />
-      {(status === 'connected' || dataChannelOpen) && (
-        <>
-          <FileDrop roomCode={roomCode} isOpen={dataChannelOpen} onFiles={(files) => files.forEach(actions.sendFile)} />
-          <TransferList inbound={inbound} outbound={outbound} />
-        </>
+      {dataChannelOpen && <FileDrop roomCode={roomCode} onFiles={(files) => files.forEach(actions.sendFile)} />}
+      {verificationCode && (
+        <div className={styles['home__verify']}>
+          verify code: <strong>{verificationCode}</strong>
+          <span className={styles['home__verify-hint']}>must match on both devices</span>
+        </div>
       )}
+      {(dataChannelOpen || hasTransfers) && <TransferList inbound={inbound} outbound={outbound} />}
       {error && <div className={styles['home__error']}>{error}</div>}
     </div>
   );
