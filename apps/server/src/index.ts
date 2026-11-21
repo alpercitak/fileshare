@@ -8,6 +8,7 @@ const ROOM_TTL_MS = 10 * 60 * 1000; // 10 minutes
 type Peer = {
   id: PeerId;
   socket: ServerWebSocket;
+  roomCode: RoomCode | null;
 };
 
 type Room = {
@@ -24,12 +25,32 @@ const send = (socket: ServerWebSocket, message: ServerMessage) => {
   socket.send(JSON.stringify(message));
 };
 
-const generateRoomCode = (): RoomCode => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+const CLIENT_MESSAGE_TYPES = new Set<string>(['createRoom', 'joinRoom', 'sdpOffer', 'sdpAnswer', 'iceCandidate']);
+
+const parseClientMessage = (raw: string): ClientMessage | null => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
   }
+  if (typeof parsed !== 'object' || parsed === null || !('type' in parsed)) return null;
+  if (typeof parsed.type !== 'string' || !CLIENT_MESSAGE_TYPES.has(parsed.type)) return null;
+
+  if (parsed.type !== 'createRoom') {
+    const payload = 'payload' in parsed ? parsed.payload : undefined;
+    const roomCode =
+      typeof payload === 'object' && payload !== null && 'roomCode' in payload ? payload.roomCode : undefined;
+    if (typeof roomCode !== 'string') return null;
+  }
+
+  return parsed as ClientMessage;
+};
+
+const generateRoomCode = (): RoomCode => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars, 32 entries so byte % 32 is unbiased
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  const code = Array.from(bytes, (byte) => chars[byte % chars.length]).join('');
   return rooms.has(code) ? generateRoomCode() : code;
 };
 
@@ -43,6 +64,8 @@ const cleanupRooms = () => {
   const now = Date.now();
   for (const [code, room] of rooms) {
     if (now - room.createdAt > ROOM_TTL_MS) {
+      room.initiator.roomCode = null;
+      if (room.joiner) room.joiner.roomCode = null;
       rooms.delete(code);
     }
   }
@@ -57,8 +80,9 @@ const server = Bun.serve({
   },
   port: PORT,
   websocket: {
+    maxPayloadLength: 64 * 1024, // SDP/ICE are small
     open(socket) {
-      const peer: Peer = { id: crypto.randomUUID(), socket };
+      const peer: Peer = { id: crypto.randomUUID(), socket, roomCode: null };
       peers.set(socket, peer);
     },
 
@@ -66,14 +90,16 @@ const server = Bun.serve({
       const peer = peers.get(socket);
       if (!peer) return;
 
-      // notify other peer in any room this peer was in
-      for (const [code, room] of rooms) {
-        const other = getOtherPeer(room, peer);
-        if (other) {
-          send(other.socket, { type: 'peerLeft', payload: { roomCode: code, peerId: peer.id } });
-        }
-        if (room.initiator.id === peer.id || room.joiner?.id === peer.id) {
-          rooms.delete(code);
+      // notify other peer in the room this peer was in
+      if (peer.roomCode !== null) {
+        const room = rooms.get(peer.roomCode);
+        if (room) {
+          const other = getOtherPeer(room, peer);
+          if (other) {
+            send(other.socket, { type: 'peerLeft', payload: { roomCode: room.code, peerId: peer.id } });
+            other.roomCode = null;
+          }
+          rooms.delete(room.code);
         }
       }
 
@@ -84,17 +110,32 @@ const server = Bun.serve({
       const peer = peers.get(socket);
       if (!peer) return;
 
-      const message = JSON.parse(rawMessage.toString()) as ClientMessage;
+      const message = parseClientMessage(rawMessage.toString());
+      if (!message) {
+        send(socket, { type: 'error', payload: { code: 'INVALID_MESSAGE', message: 'Invalid message' } });
+        return;
+      }
 
       switch (message.type) {
         case 'createRoom': {
+          if (peer.roomCode !== null) {
+            send(socket, { type: 'error', payload: { code: 'ALREADY_IN_ROOM', message: 'Already in a room' } });
+            break;
+          }
+
           const code = generateRoomCode();
           rooms.set(code, { code, initiator: peer, joiner: null, createdAt: Date.now() });
+          peer.roomCode = code;
           send(socket, { type: 'roomCreated', payload: { roomCode: code } });
           break;
         }
 
         case 'joinRoom': {
+          if (peer.roomCode !== null) {
+            send(socket, { type: 'error', payload: { code: 'ALREADY_IN_ROOM', message: 'Already in a room' } });
+            break;
+          }
+
           const room = rooms.get(message.payload.roomCode);
 
           if (!room) {
@@ -107,6 +148,7 @@ const server = Bun.serve({
           }
 
           room.joiner = peer;
+          peer.roomCode = room.code;
 
           // tell joiner they're in, tell initiator someone arrived
           send(socket, { type: 'roomJoined', payload: { roomCode: room.code, peerId: peer.id } });

@@ -8,7 +8,7 @@ export type ClientMessage =
   | { type: 'sdpAnswer'; payload: { roomCode: RoomCode; sdp: RTCSessionDescriptionInit } }
   | { type: 'iceCandidate'; payload: { roomCode: RoomCode; candidate: RTCIceCandidateInit } };
 
-export type SignalingError = 'ROOM_NOT_FOUND' | 'ROOM_FULL' | 'ROOM_EXPIRED';
+export type SignalingError = 'ROOM_NOT_FOUND' | 'ROOM_FULL' | 'ROOM_EXPIRED' | 'INVALID_MESSAGE' | 'ALREADY_IN_ROOM';
 
 export type ServerMessage =
   | { type: 'roomCreated'; payload: { roomCode: RoomCode } }
