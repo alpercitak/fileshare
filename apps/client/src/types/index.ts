@@ -1,6 +1,6 @@
 import type { DataChannelFileHeader, RoomCode } from '@fileshare/shared';
 
-export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'failed';
+export type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 
 interface Transfer {
   transferId: string;
