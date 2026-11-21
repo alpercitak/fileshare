@@ -15,6 +15,9 @@
   width: fit-content;
   padding-right: 8px;
 }
+.home__save-folder {
+  align-self: flex-start;
+}
 .home__verify {
   font-size: 12px;
   color: var(--text-muted);

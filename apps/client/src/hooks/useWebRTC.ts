@@ -17,8 +17,15 @@ import {
   getVerificationCode,
   hashJwk,
 } from '@/utils/crypto';
+import { discardFileSink, type FileSink, openFileSink } from '@/utils/save';
 
 const chunkAad = (transferId: string, index: number) => new TextEncoder().encode(`${transferId}:${index}`);
+
+interface InboundEntry {
+  chunks: Array<ArrayBuffer>; // in-memory path only
+  received: number;
+  sink: Promise<FileSink | null>; // null: in-memory path
+}
 
 export const useWebRTC = (socketUrl: string): WebRTCState => {
   const [status, setStatus] = useState<ConnectionStatus>('idle');
@@ -26,6 +33,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   const [dataChannelOpen, setDataChannelOpen] = useState(false);
   const [verificationCode, setVerificationCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saveFolder, setSaveFolder] = useState<string | null>(null);
 
   const [inbound, setInbound] = useState<Record<string, InboundTransfer>>({});
   const [outbound, setOutbound] = useState<Record<string, OutboundTransfer>>({});
@@ -35,7 +43,8 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const sharedKeyRef = useRef<Promise<CryptoKey> | null>(null);
   const activeHeaderRef = useRef<DataChannelFileHeader | null>(null);
-  const inboundChunksRef = useRef<Record<string, { chunks: Array<ArrayBuffer>; received: number }>>({});
+  const saveFolderRef = useRef<FileSystemDirectoryHandle | null>(null);
+  const inboundChunksRef = useRef<Record<string, InboundEntry>>({});
   const sendQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const sigSend = useCallback((message: ClientMessage) => {
@@ -49,6 +58,9 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
     peerConnectionRef.current = null;
     sharedKeyRef.current = null;
     activeHeaderRef.current = null;
+    for (const entry of Object.values(inboundChunksRef.current)) {
+      entry.sink.then((sink) => sink && discardFileSink(sink)); // remove partially written files
+    }
     inboundChunksRef.current = {};
     sendQueueRef.current = Promise.resolve();
     dataChannel?.close();
@@ -102,7 +114,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
         if (event.data instanceof ArrayBuffer) {
           const { index, data } = decodeFrame(event.data);
           const header = activeHeaderRef.current;
-          if (!header) {
+          if (!header || index >= header.totalChunks) {
             return;
           }
           const key = await sharedKeyRef.current;
@@ -115,16 +127,42 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
           if (!entry) {
             return; // connection was reset while this chunk was decrypting
           }
-          entry.chunks[index] = decrypted;
+          const sink = await entry.sink;
+          if (inboundChunksRef.current[header.transferId] !== entry) {
+            return; // connection was reset while the file was opening
+          }
+          if (sink) {
+            await sink.writer.write({ type: 'write', position: index * header.chunkSize, data: decrypted });
+          } else {
+            entry.chunks[index] = decrypted;
+          }
           entry.received++;
           const progressStep = Math.ceil(header.totalChunks / 100);
           if (entry.received === header.totalChunks) {
-            const url = URL.createObjectURL(assembleFile(header, entry.chunks));
             delete inboundChunksRef.current[header.transferId];
-            setInbound((prev) => ({
-              ...prev,
-              [header.transferId]: { ...prev[header.transferId], receivedChunks: entry.received, done: true, url },
-            }));
+            if (sink) {
+              await sink.writer.close();
+              setInbound((prev) => ({
+                ...prev,
+                [header.transferId]: {
+                  ...prev[header.transferId],
+                  receivedChunks: entry.received,
+                  done: true,
+                  savedTo: `${sink.dir.name}/${sink.name}`,
+                },
+              }));
+            } else {
+              const url = URL.createObjectURL(assembleFile(header, entry.chunks));
+              setInbound((prev) => ({
+                ...prev,
+                [header.transferId]: {
+                  ...prev[header.transferId],
+                  receivedChunks: entry.received,
+                  done: true,
+                  url,
+                },
+              }));
+            }
           } else if (entry.received % progressStep === 0) {
             setInbound((prev) => ({
               ...prev,
@@ -160,6 +198,15 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
             resolvePeerKey(msg.publicKey);
             break;
           case 'fileHeader':
+            // trust boundary: chunk positions derive from these, so they must match what our sender produces
+            if (
+              msg.chunkSize !== CHUNK_SIZE ||
+              !Number.isSafeInteger(msg.totalChunks) ||
+              msg.totalChunks !== Math.ceil(msg.size / CHUNK_SIZE)
+            ) {
+              activeHeaderRef.current = null;
+              break;
+            }
             if (msg.totalChunks === 0) {
               setInbound((prev) => ({
                 ...prev,
@@ -169,12 +216,17 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
                   receivedChunks: 0,
                   done: true,
                   url: URL.createObjectURL(assembleFile(msg, [])),
+                  savedTo: null,
                 },
               }));
               break;
             }
             activeHeaderRef.current = msg;
-            inboundChunksRef.current[msg.transferId] = { chunks: new Array(msg.totalChunks), received: 0 };
+            inboundChunksRef.current[msg.transferId] = {
+              chunks: [],
+              received: 0,
+              sink: saveFolderRef.current ? openFileSink(saveFolderRef.current, msg.name) : Promise.resolve(null),
+            };
             setInbound((prev) => ({
               ...prev,
               [msg.transferId]: {
@@ -183,6 +235,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
                 receivedChunks: 0,
                 done: false,
                 url: null,
+                savedTo: null,
               },
             }));
             break;
@@ -328,6 +381,21 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
     return next;
   }, []);
 
+  const chooseSaveFolder = useCallback(async () => {
+    try {
+      const dir = await window.showDirectoryPicker?.({ mode: 'readwrite' });
+      if (!dir) {
+        return;
+      }
+      saveFolderRef.current = dir;
+      setSaveFolder(dir.name);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        throw error;
+      }
+    }
+  }, []);
+
   return {
     status,
     roomCode,
@@ -336,10 +404,12 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
     outbound,
     verificationCode,
     error,
+    saveFolder,
     actions: {
       createRoom: () => sigSend({ type: 'createRoom' }),
       joinRoom: (c) => sigSend({ type: 'joinRoom', payload: { roomCode: c } }),
       sendFile,
+      chooseSaveFolder: window.showDirectoryPicker ? chooseSaveFolder : undefined,
     },
   };
 };

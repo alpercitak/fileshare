@@ -7,7 +7,7 @@ interface TransferListProps {
 }
 
 const InboundTransferItem = ({ transfer }: { transfer: InboundTransfer }) => {
-  const statusText = transfer.done ? 'Received' : 'Receiving';
+  const statusText = transfer.savedTo ? `Saved to ${transfer.savedTo}` : transfer.done ? 'Received' : 'Receiving';
   return (
     <div key={transfer.transferId} className={styles['transfer-list__item']}>
       <div className={styles['transfer-list__item-header']}>

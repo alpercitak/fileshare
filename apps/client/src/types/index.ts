@@ -11,6 +11,7 @@ export interface InboundTransfer extends Transfer {
   header: DataChannelFileHeader;
   receivedChunks: number;
   url: string | null;
+  savedTo: string | null;
 }
 
 export interface OutboundTransfer extends Transfer {
@@ -27,9 +28,17 @@ export interface WebRTCState {
   inbound: Record<string, InboundTransfer>;
   outbound: Record<string, OutboundTransfer>;
   error: string | null;
+  saveFolder: string | null;
   actions: {
     createRoom: () => void;
     joinRoom: (code: string) => void;
     sendFile: (file: File) => Promise<void>;
+    chooseSaveFolder?: () => Promise<void>; // only when the File System Access API is available
   };
+}
+
+declare global {
+  interface Window {
+    showDirectoryPicker?: (options?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
+  }
 }

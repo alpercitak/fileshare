@@ -40,7 +40,7 @@
 -   **Zero-Knowledge Key Exchange**: Leverages **ECDH (P-256)** to derive a shared secret locally. The signaling server brokers the handshake but is cryptographically incapable of deriving the session key or viewing the file data.
 -   **Atomic Binary Framing**: Utilizes custom `encodeFrame` and `decodeFrame` utilities to handle binary chunk indexing. This ensures file integrity and proper reassembly even when dealing with massive binary streams.
 -   **Hardware-Accelerated Encryption**: Uses the native **WebCrypto API** for **AES-GCM 256-bit** encryption. This offloads cryptographic tasks to the browser's optimized background processes, ensuring the UI remains responsive at 60fps during transfers.
--   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This keeps the sender's memory flat regardless of file size; the receiver currently buffers the whole file before assembly.
+-   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This keeps the sender's memory flat regardless of file size. In browsers with the File System Access API, once the receiver picks a save folder, each file streams straight to it; otherwise the receiver buffers the whole file in memory.
 
 ---
 
