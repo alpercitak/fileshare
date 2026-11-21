@@ -36,7 +36,7 @@ EXPOSE ${PORT}
 
 CMD ["bun", "dist/index.js"]
 
-FROM nginx:1.29.4-alpine-slim AS deploy-client
+FROM nginx:1.31.9-alpine-slim AS deploy-client
 
 COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
 
