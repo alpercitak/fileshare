@@ -47,5 +47,5 @@ Implement, verify with checks, stop. Don't keep hardening or generalizing once i
 ## Before Finishing
 
 Keep `docs/TODO.md` updated for affected apps: remove completed work and add newly identified remaining work.
-Run `bunx biome check .`, `bun run build`, `bunx tsc --noEmit -p apps/client` and `bunx tsc --noEmit -p apps/server` before finishing.
+Run `bun run lint`, `bun run typecheck`, `bun run build` and `bun run test` before finishing.
 Cut from your own diff: unneeded abstractions, redundant guards, one-use helpers, speculative config, unrelated changes, obvious-code comments. Equal correctness → ship the smaller one.

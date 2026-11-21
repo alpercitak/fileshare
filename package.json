@@ -9,12 +9,14 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
+    "typecheck": "tsc --noEmit -p apps/client && tsc --noEmit -p apps/server",
     "lint": "biome check .",
     "format": "biome check --write ."
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
-    "turbo": "^2.11.13"
+    "turbo": "^2.11.13",
+    "typescript": "6.0.3"
   },
   "workspaces": [
     "apps/*",
