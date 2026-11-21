@@ -21,6 +21,14 @@ import { discardFileSink, type FileSink, openFileSink } from '@/utils/save';
 
 const chunkAad = (transferId: string, index: number) => new TextEncoder().encode(`${transferId}:${index}`);
 
+const failUnfinished = <T extends { done: boolean; error: string | null }>(transfers: Record<string, T>) =>
+  Object.fromEntries(
+    Object.entries(transfers).map(([id, t]): [string, T] => [
+      id,
+      t.done || t.error ? t : { ...t, error: 'Connection lost' },
+    ]),
+  );
+
 interface InboundEntry {
   chunks: Array<ArrayBuffer>; // in-memory path only
   received: number;
@@ -63,6 +71,8 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
     }
     inboundChunksRef.current = {};
     sendQueueRef.current = Promise.resolve();
+    setInbound(failUnfinished);
+    setOutbound(failUnfinished);
     dataChannel?.close();
     peerConnection?.close();
     setDataChannelOpen(false);
@@ -121,7 +131,27 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
           if (!key) {
             return;
           }
-          const decrypted = await decryptChunk(key, data, chunkAad(header.transferId, index));
+          // stops this transfer's further chunks, removes any partial file, and shows the reason
+          const fail = (entry: InboundEntry, message: string) => {
+            if (inboundChunksRef.current[header.transferId] === entry) {
+              delete inboundChunksRef.current[header.transferId];
+            }
+            entry.sink.then((sink) => sink && discardFileSink(sink));
+            setInbound((prev) => ({
+              ...prev,
+              [header.transferId]: { ...prev[header.transferId], error: message },
+            }));
+          };
+          let decrypted: ArrayBuffer;
+          try {
+            decrypted = await decryptChunk(key, data, chunkAad(header.transferId, index));
+          } catch {
+            const entry = inboundChunksRef.current[header.transferId];
+            if (entry) {
+              fail(entry, 'Chunk failed verification');
+            }
+            return;
+          }
 
           const entry = inboundChunksRef.current[header.transferId];
           if (!entry) {
@@ -132,7 +162,17 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
             return; // connection was reset while the file was opening
           }
           if (sink) {
-            await sink.writer.write({ type: 'write', position: index * header.chunkSize, data: decrypted });
+            try {
+              await sink.writer.write({ type: 'write', position: index * header.chunkSize, data: decrypted });
+            } catch (error) {
+              if (inboundChunksRef.current[header.transferId] === entry) {
+                fail(entry, `Could not save file (${error instanceof Error ? error.message : String(error)})`);
+              }
+              return;
+            }
+            if (inboundChunksRef.current[header.transferId] !== entry) {
+              return; // failed or reset while this chunk was being written
+            }
           } else {
             entry.chunks[index] = decrypted;
           }
@@ -141,7 +181,12 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
           if (entry.received === header.totalChunks) {
             delete inboundChunksRef.current[header.transferId];
             if (sink) {
-              await sink.writer.close();
+              try {
+                await sink.writer.close();
+              } catch (error) {
+                fail(entry, `Could not save file (${error instanceof Error ? error.message : String(error)})`);
+                return;
+              }
               setInbound((prev) => ({
                 ...prev,
                 [header.transferId]: {
@@ -149,6 +194,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
                   receivedChunks: entry.received,
                   done: true,
                   savedTo: `${sink.dir.name}/${sink.name}`,
+                  error: null, // a reset during close() may have marked it failed; the file is complete
                 },
               }));
             } else {
@@ -217,6 +263,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
                   done: true,
                   url: URL.createObjectURL(assembleFile(msg, [])),
                   savedTo: null,
+                  error: null,
                 },
               }));
               break;
@@ -236,6 +283,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
                 done: false,
                 url: null,
                 savedTo: null,
+                error: null,
               },
             }));
             break;
@@ -350,7 +398,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
 
       setOutbound((prev) => ({
         ...prev,
-        [transferId]: { transferId, name: file.name, totalChunks, sentChunks: 0, done: false },
+        [transferId]: { transferId, name: file.name, totalChunks, sentChunks: 0, done: false, error: null },
       }));
 
       for (let i = 0; i < totalChunks; i++) {
@@ -365,7 +413,20 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
             dataChannel.addEventListener('close', done);
           });
         }
-        const slice = await file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE).arrayBuffer();
+        let slice: ArrayBuffer;
+        try {
+          slice = await file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE).arrayBuffer();
+        } catch (error) {
+          // the file changed or was deleted while sending
+          setOutbound((prev) => ({
+            ...prev,
+            [transferId]: {
+              ...prev[transferId],
+              error: `Could not read file (${error instanceof Error ? error.message : String(error)})`,
+            },
+          }));
+          return;
+        }
         const encrypted = await encryptChunk(key, slice, chunkAad(transferId, i));
         dataChannel.send(encodeFrame(i, encrypted));
         if ((i + 1) % progressStep === 0) {
