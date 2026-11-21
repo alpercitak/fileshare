@@ -3,6 +3,7 @@ export type RoomCode = string;
 
 export type ClientMessage =
   | { type: 'createRoom' }
+  | { type: 'leaveRoom' }
   | { type: 'joinRoom'; payload: { roomCode: RoomCode } }
   | { type: 'sdpOffer'; payload: { roomCode: RoomCode; sdp: RTCSessionDescriptionInit } }
   | { type: 'sdpAnswer'; payload: { roomCode: RoomCode; sdp: RTCSessionDescriptionInit } }
@@ -20,6 +21,11 @@ export type ServerMessage =
   | { type: 'peerLeft'; payload: { roomCode: RoomCode; peerId: PeerId } }
   | { type: 'error'; payload: { code: SignalingError; message: string } };
 
+export type DataChannelCommit = {
+  type: 'commit';
+  hash: string;
+};
+
 export type DataChannelHandshake = {
   type: 'handshake';
   publicKey: JsonWebKey;
@@ -35,20 +41,4 @@ export type DataChannelFileHeader = {
   chunkSize: number;
 };
 
-export type DataChannelFileComplete = {
-  type: 'fileComplete';
-  transferId: string;
-  checksum: string;
-};
-
-export type DataChannelPause = { type: 'pause'; transferId: string };
-export type DataChannelResume = { type: 'resume'; transferId: string };
-export type DataChannelCancel = { type: 'cancel'; transferId: string };
-
-export type DataChannelMessage =
-  | DataChannelHandshake
-  | DataChannelFileHeader
-  | DataChannelFileComplete
-  | DataChannelPause
-  | DataChannelResume
-  | DataChannelCancel;
+export type DataChannelMessage = DataChannelCommit | DataChannelHandshake | DataChannelFileHeader;

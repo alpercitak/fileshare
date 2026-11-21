@@ -25,7 +25,14 @@ const send = (socket: ServerWebSocket, message: ServerMessage) => {
   socket.send(JSON.stringify(message));
 };
 
-const CLIENT_MESSAGE_TYPES = new Set<string>(['createRoom', 'joinRoom', 'sdpOffer', 'sdpAnswer', 'iceCandidate']);
+const CLIENT_MESSAGE_TYPES = new Set<string>([
+  'createRoom',
+  'leaveRoom',
+  'joinRoom',
+  'sdpOffer',
+  'sdpAnswer',
+  'iceCandidate',
+]);
 
 const parseClientMessage = (raw: string): ClientMessage | null => {
   let parsed: unknown;
@@ -37,7 +44,7 @@ const parseClientMessage = (raw: string): ClientMessage | null => {
   if (typeof parsed !== 'object' || parsed === null || !('type' in parsed)) return null;
   if (typeof parsed.type !== 'string' || !CLIENT_MESSAGE_TYPES.has(parsed.type)) return null;
 
-  if (parsed.type !== 'createRoom') {
+  if (parsed.type !== 'createRoom' && parsed.type !== 'leaveRoom') {
     const payload = 'payload' in parsed ? parsed.payload : undefined;
     const roomCode =
       typeof payload === 'object' && payload !== null && 'roomCode' in payload ? payload.roomCode : undefined;
@@ -60,12 +67,29 @@ const getOtherPeer = (room: Room, self: Peer): Peer | null => {
   return null;
 };
 
+const leaveRoom = (peer: Peer) => {
+  if (peer.roomCode === null) return;
+
+  const room = rooms.get(peer.roomCode);
+  peer.roomCode = null;
+  if (!room) return;
+
+  // notify other peer in the room this peer was in
+  const other = getOtherPeer(room, peer);
+  if (other) {
+    send(other.socket, { type: 'peerLeft', payload: { roomCode: room.code, peerId: peer.id } });
+    other.roomCode = null;
+  }
+  rooms.delete(room.code);
+};
+
+// only rooms still waiting for a joiner expire; joined rooms live until a peer leaves
 const cleanupRooms = () => {
   const now = Date.now();
   for (const [code, room] of rooms) {
-    if (now - room.createdAt > ROOM_TTL_MS) {
+    if (room.joiner === null && now - room.createdAt > ROOM_TTL_MS) {
+      send(room.initiator.socket, { type: 'error', payload: { code: 'ROOM_EXPIRED', message: 'Room expired' } });
       room.initiator.roomCode = null;
-      if (room.joiner) room.joiner.roomCode = null;
       rooms.delete(code);
     }
   }
@@ -90,19 +114,7 @@ const server = Bun.serve({
       const peer = peers.get(socket);
       if (!peer) return;
 
-      // notify other peer in the room this peer was in
-      if (peer.roomCode !== null) {
-        const room = rooms.get(peer.roomCode);
-        if (room) {
-          const other = getOtherPeer(room, peer);
-          if (other) {
-            send(other.socket, { type: 'peerLeft', payload: { roomCode: room.code, peerId: peer.id } });
-            other.roomCode = null;
-          }
-          rooms.delete(room.code);
-        }
-      }
-
+      leaveRoom(peer);
       peers.delete(socket);
     },
 
@@ -127,6 +139,11 @@ const server = Bun.serve({
           rooms.set(code, { code, initiator: peer, joiner: null, createdAt: Date.now() });
           peer.roomCode = code;
           send(socket, { type: 'roomCreated', payload: { roomCode: code } });
+          break;
+        }
+
+        case 'leaveRoom': {
+          leaveRoom(peer);
           break;
         }
 
