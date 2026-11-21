@@ -31,6 +31,6 @@ jobs:
       - run: bunx tsc --noEmit -p apps/client
       - run: bunx tsc --noEmit -p apps/server
 
-      - uses: alpercitak/fasttrack@v0.2.0
+      - uses: alpercitak/fasttrack@v0.2.2
         with:
           args: --build --test --affected --verbose
