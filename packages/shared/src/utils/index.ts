@@ -1,7 +1,7 @@
 const DEFAULT_PORT = 4001 as const;
 
 export const getPort = (): number => {
-  const env = (globalThis as any).process?.env;
+  const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env;
   if (env?.PORT) {
     return Number(env.PORT);
   }

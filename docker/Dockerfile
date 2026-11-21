@@ -30,13 +30,11 @@ ENV PORT=${PORT}
 
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=build-server /app/apps/server ./apps/server
-COPY --from=build-server /app/packages/shared ./packages/shared
+COPY --from=build-server /app/apps/server/dist ./dist
 
 EXPOSE ${PORT}
 
-CMD ["bun", "apps/server/dist/index.js"]
+CMD ["bun", "dist/index.js"]
 
 FROM nginx:1.29.4-alpine-slim AS deploy-client
 

@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ "**" ]
+    branches: ["**"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,6 +26,10 @@ jobs:
           bun-version-file: "package.json"
 
       - run: bun install
+
+      - run: bunx biome ci .
+      - run: bunx tsc --noEmit -p apps/client
+      - run: bunx tsc --noEmit -p apps/server
 
       - uses: alpercitak/fasttrack@v0.2.0
         with:

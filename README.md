@@ -14,33 +14,33 @@
 
 ### Operational Overview
 
-*   **Runtime:** Optimized for **Bun** (Fastest JS all-in-one toolkit).
-*   **Networking:** WebRTC DataChannels (P2P) orchestrated via WebSockets.
-*   **Security:** WebCrypto API for hardware-accelerated AES-GCM 256-bit encryption.
-*   **Privacy:** ECDH (Elliptic Curve Diffie-Hellman) key exchange for zero-knowledge transfers.
-*   **Interface:** Matte-phosphor industrial UI built with Preact and CSS Modules.
+-   **Runtime:** Optimized for **Bun** (Fastest JS all-in-one toolkit).
+-   **Networking:** WebRTC DataChannels (P2P) orchestrated via WebSockets.
+-   **Security:** WebCrypto API for hardware-accelerated AES-GCM 256-bit encryption.
+-   **Privacy:** ECDH (Elliptic Curve Diffie-Hellman) key exchange for zero-knowledge transfers.
+-   **Interface:** Matte-phosphor industrial UI built with Preact and CSS Modules.
 
 ---
 
 ### Technical Specification
 
-| Layer | Technology | Implementation |
-| :--- | :--- | :--- |
-| **Runtime** | Bun | Used for high-speed dependency management and bundling. |
-| **Frontend** | Preact + TS | Reactive state management for real-time progress tracking. |
-| **Transport** | WebRTC | Direct Peer-to-Peer DataChannels to bypass server bottlenecks. |
-| **Signaling** | WebSockets | Lightweight node discovery and session negotiation. |
-| **Security** | WebCrypto | Native AES-256-GCM encryption with chunk-level integrity. |
+| Layer         | Technology  | Implementation                                                 |
+| :------------ | :---------- | :------------------------------------------------------------- |
+| **Runtime**   | Bun         | Used for high-speed dependency management and bundling.        |
+| **Frontend**  | Preact + TS | Reactive state management for real-time progress tracking.     |
+| **Transport** | WebRTC      | Direct Peer-to-Peer DataChannels to bypass server bottlenecks. |
+| **Signaling** | WebSockets  | Lightweight node discovery and session negotiation.            |
+| **Security**  | WebCrypto   | Native AES-256-GCM encryption with chunk-level integrity.      |
 
 ---
 
 ### Engineering Highlights
 
-*   **Asynchronous Backpressure Management**: Implements a manual flow-control loop using `bufferedAmount`. By pausing the stream when the `RTCDataChannel` buffer exceeds **1MB** (`BUFFERED_AMOUNT_HIGH`) and resuming on the `bufferedamountlow` event at **256KB** (`BUFFERED_AMOUNT_LOW`) instead of polling, the system prevents memory overflow and packet loss during high-speed transfers.
-*   **Zero-Knowledge Key Exchange**: Leverages **ECDH (P-256)** to derive a shared secret locally. The signaling server brokers the handshake but is cryptographically incapable of deriving the session key or viewing the file data.
-*   **Atomic Binary Framing**: Utilizes custom `encodeFrame` and `decodeFrame` utilities to handle binary chunk indexing. This ensures file integrity and proper reassembly even when dealing with massive binary streams.
-*   **Hardware-Accelerated Encryption**: Uses the native **WebCrypto API** for **AES-GCM 256-bit** encryption. This offloads cryptographic tasks to the browser's optimized background processes, ensuring the UI remains responsive at 60fps during transfers.
-*   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This keeps the sender's memory flat regardless of file size; the receiver currently buffers the whole file before assembly.
+-   **Asynchronous Backpressure Management**: Implements a manual flow-control loop using `bufferedAmount`. By pausing the stream when the `RTCDataChannel` buffer exceeds **1MB** (`BUFFERED_AMOUNT_HIGH`) and resuming on the `bufferedamountlow` event at **256KB** (`BUFFERED_AMOUNT_LOW`) instead of polling, the system prevents memory overflow and packet loss during high-speed transfers.
+-   **Zero-Knowledge Key Exchange**: Leverages **ECDH (P-256)** to derive a shared secret locally. The signaling server brokers the handshake but is cryptographically incapable of deriving the session key or viewing the file data.
+-   **Atomic Binary Framing**: Utilizes custom `encodeFrame` and `decodeFrame` utilities to handle binary chunk indexing. This ensures file integrity and proper reassembly even when dealing with massive binary streams.
+-   **Hardware-Accelerated Encryption**: Uses the native **WebCrypto API** for **AES-GCM 256-bit** encryption. This offloads cryptographic tasks to the browser's optimized background processes, ensuring the UI remains responsive at 60fps during transfers.
+-   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This keeps the sender's memory flat regardless of file size; the receiver currently buffers the whole file before assembly.
 
 ---
 
@@ -67,5 +67,5 @@ bun run dev
 ---
 
 ### License
- 
+
 MIT
