@@ -31,6 +31,12 @@ export type DataChannelHandshake = {
   publicKey: JsonWebKey;
 };
 
+export type DataChannelAbort = {
+  type: 'abort';
+  transferId: string;
+  reason: string;
+};
+
 export type DataChannelFileHeader = {
   type: 'fileHeader';
   transferId: string;
@@ -41,4 +47,4 @@ export type DataChannelFileHeader = {
   chunkSize: number;
 };
 
-export type DataChannelMessage = DataChannelCommit | DataChannelHandshake | DataChannelFileHeader;
+export type DataChannelMessage = DataChannelCommit | DataChannelHandshake | DataChannelFileHeader | DataChannelAbort;

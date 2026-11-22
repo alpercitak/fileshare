@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/ws': {
-        target: `ws://localhost:${process.env.PORT ?? 4001}`,
+        target: `ws://localhost:${process.env.SIGNALING_PORT ?? 4001}`,
         ws: true,
       },
     },
