@@ -35,7 +35,7 @@ export interface WebRTCState {
     createRoom: () => void;
     joinRoom: (code: string) => void;
     sendFile: (file: File) => Promise<void>;
-    chooseSaveFolder?: () => Promise<void>; // only when the File System Access API is available
+    chooseSaveFolder?: () => Promise<void>; // folder via the File System Access API, else downloads via a service worker
   };
 }
 

@@ -2,7 +2,9 @@
 
 ## client
 
-- [ ] Receivers without the File System Access API (Firefox, Safari, Brave, Android) or without a chosen folder still buffer whole files in memory.
+- [ ] Receivers that haven't opted into saving to disk still buffer whole files in memory until they click download.
+- [ ] Streamed downloads (service worker path) have no backpressure: if the browser writes slower than chunks arrive, they queue in the worker's memory.
+- [ ] The service worker download path is only checked in Chromium; confirm it in Firefox, Safari and Android.
 
 ## docker
 

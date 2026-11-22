@@ -1,9 +1,10 @@
 import { MAX_SAVE_NAME_TRIES } from '@/constants';
 
 export interface FileSink {
-  dir: FileSystemDirectoryHandle;
-  name: string;
-  writer: WritableStreamDefaultWriter<FileSystemWriteChunkType>;
+  savedTo: string;
+  write: (position: number, data: ArrayBuffer) => Promise<void>;
+  close: () => Promise<void>;
+  discard: () => Promise<void>; // abort and remove the partial file
 }
 
 const nameWithSuffix = (name: string, n: number) => {
@@ -35,8 +36,16 @@ const createSink = async (dir: FileSystemDirectoryHandle, name: string): Promise
     if (free === null) {
       return null;
     }
-    const handle = await dir.getFileHandle(free, { create: true });
-    return { dir, name: free, writer: (await handle.createWritable()).getWriter() };
+    const fileName = free;
+    const handle = await dir.getFileHandle(fileName, { create: true });
+    const writer = (await handle.createWritable()).getWriter();
+    return {
+      savedTo: `${dir.name}/${fileName}`,
+      write: (position, data) => writer.write({ type: 'write', position, data }),
+      close: () => writer.close(),
+      // creating the file already left an empty one in the folder, so remove it
+      discard: () => writer.abort().finally(() => dir.removeEntry(fileName)),
+    };
   } catch {
     // Peer-supplied name rejected (e.g. "..", contains "/"), permission revoked, or too many copies: caller buffers in memory instead
     return null;
@@ -51,6 +60,3 @@ export const openFileSink = (dir: FileSystemDirectoryHandle, name: string): Prom
   openQueue = next;
   return next;
 };
-
-// Abort a partial file and remove it, since creating it already left an empty file in the folder.
-export const discardFileSink = (sink: FileSink) => sink.writer.abort().finally(() => sink.dir.removeEntry(sink.name));

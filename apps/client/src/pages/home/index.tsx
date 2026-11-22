@@ -35,7 +35,7 @@ export const Home = () => {
       {dataChannelOpen && actions.chooseSaveFolder && (
         <div className={styles['home__save-folder']}>
           <Button onClick={actions.chooseSaveFolder}>
-            {saveFolder ? `saving to: ${saveFolder}` : 'save incoming files to a folder'}
+            {saveFolder ? `saving to: ${saveFolder}` : 'save incoming files to disk'}
           </Button>
         </div>
       )}

@@ -24,7 +24,8 @@ import {
   getVerificationCode,
   hashJwk,
 } from '@/utils/crypto';
-import { discardFileSink, type FileSink, openFileSink } from '@/utils/save';
+import { openDownloadSink, registerDownloadWorker } from '@/utils/download';
+import { type FileSink, openFileSink } from '@/utils/save';
 
 const chunkAad = (transferId: string, index: number) => new TextEncoder().encode(`${transferId}:${index}`);
 
@@ -60,6 +61,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   const sharedKeyRef = useRef<Promise<CryptoKey> | null>(null);
   const activeHeaderRef = useRef<DataChannelFileHeader | null>(null);
   const saveFolderRef = useRef<FileSystemDirectoryHandle | null>(null);
+  const downloadWorkerRef = useRef<ServiceWorkerRegistration | null>(null);
   const inboundChunksRef = useRef<Record<string, InboundEntry>>({});
   const sendQueueRef = useRef<Promise<void>>(Promise.resolve());
   const abortedOutboundRef = useRef(new Set<string>());
@@ -78,7 +80,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
     sharedKeyRef.current = null;
     activeHeaderRef.current = null;
     for (const entry of Object.values(inboundChunksRef.current)) {
-      entry.sink.then((sink) => sink && discardFileSink(sink)); // remove partially written files
+      entry.sink.then((sink) => sink?.discard()); // remove partially written files
     }
     inboundChunksRef.current = {};
     abortedOutboundRef.current.clear();
@@ -142,7 +144,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
         if (inboundChunksRef.current[transferId] === entry) {
           delete inboundChunksRef.current[transferId];
         }
-        entry.sink.then((sink) => sink && discardFileSink(sink));
+        entry.sink.then((sink) => sink?.discard());
         setInbound((prev) => ({
           ...prev,
           [transferId]: { ...prev[transferId], error: message },
@@ -182,7 +184,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
           }
           if (sink) {
             try {
-              await sink.writer.write({ type: 'write', position: index * header.chunkSize, data: decrypted });
+              await sink.write(index * header.chunkSize, decrypted);
             } catch (error) {
               if (inboundChunksRef.current[header.transferId] === entry) {
                 const reason = `Could not save file (${error instanceof Error ? error.message : String(error)})`;
@@ -203,7 +205,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
             delete inboundChunksRef.current[header.transferId];
             if (sink) {
               try {
-                await sink.writer.close();
+                await sink.close();
               } catch (error) {
                 const reason = `Could not save file (${error instanceof Error ? error.message : String(error)})`;
                 failInbound(header.transferId, entry, reason);
@@ -216,7 +218,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
                   ...prev[header.transferId],
                   receivedChunks: entry.received,
                   done: true,
-                  savedTo: `${sink.dir.name}/${sink.name}`,
+                  savedTo: sink.savedTo,
                   error: null, // a reset during close() may have marked it failed; the file is complete
                 },
               }));
@@ -314,7 +316,11 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
             inboundChunksRef.current[msg.transferId] = {
               chunks: [],
               received: 0,
-              sink: saveFolderRef.current ? openFileSink(saveFolderRef.current, msg.name) : Promise.resolve(null),
+              sink: saveFolderRef.current
+                ? openFileSink(saveFolderRef.current, msg.name)
+                : downloadWorkerRef.current
+                  ? openDownloadSink(downloadWorkerRef.current, msg.name, msg.size)
+                  : Promise.resolve(null),
             };
             setInbound((prev) => ({
               ...prev,
@@ -517,11 +523,13 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   }, []);
 
   const chooseSaveFolder = useCallback(async () => {
+    if (!window.showDirectoryPicker) {
+      downloadWorkerRef.current = await registerDownloadWorker();
+      setSaveFolder('downloads');
+      return;
+    }
     try {
-      const dir = await window.showDirectoryPicker?.({ mode: 'readwrite' });
-      if (!dir) {
-        return;
-      }
+      const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
       saveFolderRef.current = dir;
       setSaveFolder(dir.name);
     } catch (error) {
@@ -545,7 +553,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
       createRoom: () => sigSend({ type: 'createRoom' }),
       joinRoom: (c) => sigSend({ type: 'joinRoom', payload: { roomCode: c } }),
       sendFile,
-      chooseSaveFolder: window.showDirectoryPicker ? chooseSaveFolder : undefined,
+      chooseSaveFolder: window.showDirectoryPicker || 'serviceWorker' in navigator ? chooseSaveFolder : undefined,
     },
   };
 };
