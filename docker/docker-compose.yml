@@ -14,3 +14,21 @@ services:
       target: deploy-client
     ports:
       - 5173:80
+  # HTTPS in front of nginx: DOMAIN=files.example.com docker compose -f docker/docker-compose.yml --profile tls up
+  fileshare-tls:
+    image: caddy:2.10.2-alpine
+    profiles: [tls]
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - fileshare-client
+
+volumes:
+  caddy-data:

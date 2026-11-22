@@ -40,7 +40,7 @@
 -   **Zero-Knowledge Key Exchange**: Leverages **ECDH (P-256)** to derive a shared secret locally. The signaling server brokers the handshake but is cryptographically incapable of deriving the session key or viewing the file data.
 -   **Atomic Binary Framing**: Utilizes custom `encodeFrame` and `decodeFrame` utilities to handle binary chunk indexing. This ensures file integrity and proper reassembly even when dealing with massive binary streams.
 -   **Hardware-Accelerated Encryption**: Uses the native **WebCrypto API** for **AES-GCM 256-bit** encryption. This offloads cryptographic tasks to the browser's optimized background processes, ensuring the UI remains responsive at 60fps during transfers.
--   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This keeps the sender's memory flat regardless of file size. In browsers with the File System Access API, once the receiver picks a save folder, each file streams straight to it; otherwise the receiver buffers the whole file in memory.
+-   **Memory-Efficient Chunking**: Fragments files into **64KB** chunks using `Blob.slice()` and `ArrayBuffer`. This keeps the sender's memory flat regardless of file size. Once the receiver opts in to saving to disk, each file streams straight to a chosen folder (File System Access API) or, in other browsers, into a download through a service worker; otherwise the receiver buffers the whole file in memory.
 
 ---
 
@@ -62,6 +62,20 @@ git clone https://github.com/alpercitak/fileshare
 cd fileshare
 bun install
 bun run dev
+```
+
+---
+
+### Deployment
+
+```bash
+make deploy
+```
+
+serves the app over plain HTTP on port 5173. WebRTC and WebCrypto need a secure context everywhere but `localhost`, so on a real host put HTTPS in front of it. The `tls` profile adds Caddy, which gets a certificate for `DOMAIN` automatically (ports 80 and 443 must be reachable):
+
+```bash
+DOMAIN=files.example.com docker compose -f docker/docker-compose.yml --profile tls up --build -d
 ```
 
 ---
