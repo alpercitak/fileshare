@@ -6,17 +6,20 @@ import styles from './index.module.css';
 interface RoomManagerProps {
   status: ConnectionStatus;
   roomCode: string | null;
+  signalingOpen: boolean;
   onCreate: () => void;
   onJoin: (code: string) => void;
 }
 
-export const RoomManager = ({ status, roomCode, onCreate, onJoin }: RoomManagerProps) => {
+export const RoomManager = ({ status, roomCode, signalingOpen, onCreate, onJoin }: RoomManagerProps) => {
   const [input, setInput] = useState('');
 
   if (status === 'idle') {
     return (
       <div className={styles['room-manager']}>
-        <Button onClick={onCreate}>create room</Button>
+        <Button onClick={onCreate} disabled={!signalingOpen}>
+          create room
+        </Button>
         <div className={styles['room-manager__input-container']}>
           <input
             className={styles['room-manager__input']}
@@ -24,8 +27,11 @@ export const RoomManager = ({ status, roomCode, onCreate, onJoin }: RoomManagerP
             value={input}
             onInput={(e) => setInput(e.currentTarget.value.toUpperCase())}
           />
-          <Button onClick={() => onJoin(input)}>join</Button>
+          <Button onClick={() => onJoin(input)} disabled={!signalingOpen}>
+            join
+          </Button>
         </div>
+        {!signalingOpen && <div className={styles['room-manager__status']}>connecting to server...</div>}
       </div>
     );
   }

@@ -6,7 +6,14 @@ import type {
   ServerMessage,
 } from '@fileshare/shared';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
-import { BUFFERED_AMOUNT_HIGH, BUFFERED_AMOUNT_LOW, CHUNK_SIZE, STUN } from '@/constants';
+import {
+  BUFFERED_AMOUNT_HIGH,
+  BUFFERED_AMOUNT_LOW,
+  CHUNK_SIZE,
+  SIGNALING_RETRY_BASE_MS,
+  SIGNALING_RETRY_MAX_MS,
+  STUN,
+} from '@/constants';
 import type { ConnectionStatus, InboundTransfer, OutboundTransfer, WebRTCState } from '@/types';
 import { assembleFile, decodeFrame, encodeFrame } from '@/utils/binary';
 import {
@@ -42,6 +49,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   const [verificationCode, setVerificationCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveFolder, setSaveFolder] = useState<string | null>(null);
+  const [signalingOpen, setSignalingOpen] = useState(false);
 
   const [inbound, setInbound] = useState<Record<string, InboundTransfer>>({});
   const [outbound, setOutbound] = useState<Record<string, OutboundTransfer>>({});
@@ -54,9 +62,12 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   const saveFolderRef = useRef<FileSystemDirectoryHandle | null>(null);
   const inboundChunksRef = useRef<Record<string, InboundEntry>>({});
   const sendQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const abortedOutboundRef = useRef(new Set<string>());
 
   const sigSend = useCallback((message: ClientMessage) => {
-    socketRef.current?.send(JSON.stringify(message));
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(message));
+    }
   }, []);
 
   const resetConnection = useCallback((message: string) => {
@@ -70,6 +81,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
       entry.sink.then((sink) => sink && discardFileSink(sink)); // remove partially written files
     }
     inboundChunksRef.current = {};
+    abortedOutboundRef.current.clear();
     sendQueueRef.current = Promise.resolve();
     setInbound(failUnfinished);
     setOutbound(failUnfinished);
@@ -120,6 +132,23 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
         resetConnection('Connection closed');
       };
 
+      // stops an inbound transfer, removes any partial file, and shows the reason
+      const sendAbort = (transferId: string, reason: string) => {
+        if (dataChannel.readyState === 'open') {
+          dataChannel.send(JSON.stringify({ type: 'abort', transferId, reason }));
+        }
+      };
+      const failInbound = (transferId: string, entry: InboundEntry, message: string) => {
+        if (inboundChunksRef.current[transferId] === entry) {
+          delete inboundChunksRef.current[transferId];
+        }
+        entry.sink.then((sink) => sink && discardFileSink(sink));
+        setInbound((prev) => ({
+          ...prev,
+          [transferId]: { ...prev[transferId], error: message },
+        }));
+      };
+
       dataChannel.onmessage = async (event) => {
         if (event.data instanceof ArrayBuffer) {
           const { index, data } = decodeFrame(event.data);
@@ -131,24 +160,14 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
           if (!key) {
             return;
           }
-          // stops this transfer's further chunks, removes any partial file, and shows the reason
-          const fail = (entry: InboundEntry, message: string) => {
-            if (inboundChunksRef.current[header.transferId] === entry) {
-              delete inboundChunksRef.current[header.transferId];
-            }
-            entry.sink.then((sink) => sink && discardFileSink(sink));
-            setInbound((prev) => ({
-              ...prev,
-              [header.transferId]: { ...prev[header.transferId], error: message },
-            }));
-          };
           let decrypted: ArrayBuffer;
           try {
             decrypted = await decryptChunk(key, data, chunkAad(header.transferId, index));
           } catch {
             const entry = inboundChunksRef.current[header.transferId];
             if (entry) {
-              fail(entry, 'Chunk failed verification');
+              failInbound(header.transferId, entry, 'Chunk failed verification');
+              sendAbort(header.transferId, 'Chunk failed verification');
             }
             return;
           }
@@ -166,7 +185,9 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
               await sink.writer.write({ type: 'write', position: index * header.chunkSize, data: decrypted });
             } catch (error) {
               if (inboundChunksRef.current[header.transferId] === entry) {
-                fail(entry, `Could not save file (${error instanceof Error ? error.message : String(error)})`);
+                const reason = `Could not save file (${error instanceof Error ? error.message : String(error)})`;
+                failInbound(header.transferId, entry, reason);
+                sendAbort(header.transferId, reason);
               }
               return;
             }
@@ -184,7 +205,9 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
               try {
                 await sink.writer.close();
               } catch (error) {
-                fail(entry, `Could not save file (${error instanceof Error ? error.message : String(error)})`);
+                const reason = `Could not save file (${error instanceof Error ? error.message : String(error)})`;
+                failInbound(header.transferId, entry, reason);
+                sendAbort(header.transferId, reason);
                 return;
               }
               setInbound((prev) => ({
@@ -243,6 +266,25 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
             }
             resolvePeerKey(msg.publicKey);
             break;
+          case 'abort': {
+            // trust boundary: the peer names the transfer, so only a string id can match one
+            if (typeof msg.transferId !== 'string') {
+              break;
+            }
+            const reason = String(msg.reason);
+            const entry = inboundChunksRef.current[msg.transferId];
+            if (entry) {
+              failInbound(msg.transferId, entry, `Sender: ${reason}`);
+            } else {
+              abortedOutboundRef.current.add(msg.transferId);
+              setOutbound((prev) =>
+                prev[msg.transferId]
+                  ? { ...prev, [msg.transferId]: { ...prev[msg.transferId], error: `Receiver: ${reason}` } }
+                  : prev,
+              );
+            }
+            break;
+          }
           case 'fileHeader':
             // trust boundary: chunk positions derive from these, so they must match what our sender produces
             if (
@@ -366,11 +408,39 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
   );
 
   useEffect(() => {
-    const ws = new WebSocket(socketUrl);
-    socketRef.current = ws;
-    ws.onmessage = (e) => handleSignaling(JSON.parse(e.data));
-    return () => ws.close();
-  }, [handleSignaling, socketUrl]);
+    let disposed = false;
+    let attempt = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const connect = () => {
+      const ws = new WebSocket(socketUrl);
+      let wasOpen = false;
+      socketRef.current = ws;
+      ws.onopen = () => {
+        wasOpen = true;
+        attempt = 0;
+        setSignalingOpen(true);
+      };
+      ws.onmessage = (e) => handleSignaling(JSON.parse(e.data));
+      ws.onclose = () => {
+        if (disposed) {
+          return;
+        }
+        setSignalingOpen(false);
+        if (wasOpen) {
+          // the server treats a closed socket as the peer leaving, so the session cannot survive
+          resetConnection('Lost connection to the signaling server');
+        }
+        retryTimer = setTimeout(connect, Math.min(SIGNALING_RETRY_BASE_MS * 2 ** attempt, SIGNALING_RETRY_MAX_MS));
+        attempt++;
+      };
+    };
+    connect();
+    return () => {
+      disposed = true;
+      clearTimeout(retryTimer);
+      socketRef.current?.close();
+    };
+  }, [handleSignaling, resetConnection, socketUrl]);
 
   const sendFile = useCallback((file: File) => {
     const next = sendQueueRef.current.then(async () => {
@@ -401,7 +471,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
         [transferId]: { transferId, name: file.name, totalChunks, sentChunks: 0, done: false, error: null },
       }));
 
-      for (let i = 0; i < totalChunks; i++) {
+      for (let i = 0; i < totalChunks && !abortedOutboundRef.current.has(transferId); i++) {
         if (dataChannel.bufferedAmount > BUFFERED_AMOUNT_HIGH) {
           await new Promise<void>((resolve) => {
             const done = () => {
@@ -418,12 +488,13 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
           slice = await file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE).arrayBuffer();
         } catch (error) {
           // the file changed or was deleted while sending
+          const reason = `Could not read file (${error instanceof Error ? error.message : String(error)})`;
+          if (dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify({ type: 'abort', transferId, reason }));
+          }
           setOutbound((prev) => ({
             ...prev,
-            [transferId]: {
-              ...prev[transferId],
-              error: `Could not read file (${error instanceof Error ? error.message : String(error)})`,
-            },
+            [transferId]: { ...prev[transferId], error: reason },
           }));
           return;
         }
@@ -432,6 +503,9 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
         if ((i + 1) % progressStep === 0) {
           setOutbound((prev) => ({ ...prev, [transferId]: { ...prev[transferId], sentChunks: i + 1 } }));
         }
+      }
+      if (abortedOutboundRef.current.has(transferId)) {
+        return; // the receiver aborted; its error is already shown
       }
       setOutbound((prev) => ({
         ...prev,
@@ -466,6 +540,7 @@ export const useWebRTC = (socketUrl: string): WebRTCState => {
     verificationCode,
     error,
     saveFolder,
+    signalingOpen,
     actions: {
       createRoom: () => sigSend({ type: 'createRoom' }),
       joinRoom: (c) => sigSend({ type: 'joinRoom', payload: { roomCode: c } }),

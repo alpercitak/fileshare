@@ -25,6 +25,7 @@ export interface WebRTCState {
   status: ConnectionStatus;
   roomCode: RoomCode | null;
   dataChannelOpen: boolean;
+  signalingOpen: boolean;
   verificationCode: string | null;
   inbound: Record<string, InboundTransfer>;
   outbound: Record<string, OutboundTransfer>;
