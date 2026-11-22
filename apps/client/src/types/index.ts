@@ -5,6 +5,7 @@ export type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 interface Transfer {
   transferId: string;
   done: boolean;
+  error: string | null;
 }
 
 export interface InboundTransfer extends Transfer {
